@@ -1,0 +1,210 @@
+         TITLE 'ABM RELACIONES'                                         00010015
+MAP0450  DFHMSD TYPE=&SYSPARM,MODE=INOUT,CTRL=(FREEKB,FRSET),          *00020017
+               LANG=COBOL,TIOAPFX=YES,COLOR=BLUE,                      *00030022
+               MAPATTS=(COLOR,HILIGHT),DSATTS=(COLOR,HILIGHT)           00030222
+                                                                        00030322
+*--------------------------------------------------------------------+  00030415
+* MAPA INICIAL PARA PEDIR TIPDOC Y NRODOC  - MAPKEY                  +  00030515
+*--------------------------------------------------------------------+  00030615
+                                                                        00030715
+MAPKEY   DFHMDI SIZE=(24,80)                                            00031015
+                                                                        00031107
+         DFHMDF POS=(1,7),LENGTH=26,INITIAL='ABM RELACIONES            *00032015
+               ',HILIGHT=UNDERLINE,ATTRB=(ASKIP,BRT)                    00033002
+         DFHMDF POS=(1,34),LENGTH=01,ATTRB=ASKIP                        00034002
+         DFHMDF POS=(1,60),LENGTH=12,ATTRB=PROT,INITIAL='S150-MAPKEY '  00035015
+         DFHMDF POS=(1,73),LENGTH=01,ATTRB=ASKIP                        00036002
+                                                                        00036107
+FECHAK   DFHMDF POS=(2,60),LENGTH=10,ATTRB=PROT,INITIAL='99-99-9999',  *00037015
+               PICOUT='X(10)'                                           00037102
+         DFHMDF POS=(2,71),LENGTH=1,ATTRB=ASKIP                         00038002
+                                                                        00038107
+                                                                        00038218
+         DFHMDF POS=(5,9),LENGTH=20,ATTRB=PROT,COLOR=TURQUOISE,        *00038318
+               INITIAL='SELECCIONAR OPCION :'                           00038418
+         DFHMDF POS=(7,11),LENGTH=20,ATTRB=PROT,INITIAL='PF1  - ALTA'   00038518
+         DFHMDF POS=(8,11),LENGTH=20,ATTRB=PROT,INITIAL='PF3  - BAJA'   00038718
+         DFHMDF POS=(9,11),LENGTH=20,ATTRB=PROT,INITIAL='PF5  - MODIFIC*00038918
+               ACION'                                                   00039018
+         DFHMDF POS=(11,11),LENGTH=20,ATTRB=PROT,INITIAL='PF12 - SALIR' 00042018
+                                                                        00043018
+                                                                        00043415
+KEYERR   DFHMDF POS=(22,4),LENGTH=72,INITIAL='',PICOUT='X(72)',        *00450027
+               COLOR=RED,ATTRB=(ASKIP,PROT)                             00470027
+         DFHMDF POS=(22,77),LENGTH=01,ATTRB=ASKIP                       00480002
+                                                                        00490007
+*        DFHMDF POS=(24,10),LENGTH=62,COLOR=GREEN,                     *00500021
+               INITIAL='PF1 ALTA - PF2 BAJA - PF3 MODIFICA'             00501021
+*        DFHMDF POS=(24,73),LENGTH=01,ATTRB=ASKIP                       00520021
+                                                                        00521015
+*--------------------------------------------------------------------+  00522015
+* MAPA INICIAL PARA ALTA DE RELACION - MAPALT                        +  00523015
+*--------------------------------------------------------------------+  00524015
+                                                                        00525015
+MAPALT   DFHMDI SIZE=(24,80)                                            00526015
+                                                                        00527015
+         DFHMDF POS=(1,7),LENGTH=26,INITIAL='ABM RELACIONES - ALTA     *00528015
+               ',HILIGHT=UNDERLINE,ATTRB=(ASKIP,BRT)                    00529015
+         DFHMDF POS=(1,34),LENGTH=01,ATTRB=ASKIP                        00529115
+         DFHMDF POS=(1,60),LENGTH=12,ATTRB=PROT,INITIAL='S150-MAPALT '  00529215
+         DFHMDF POS=(1,73),LENGTH=01,ATTRB=ASKIP                        00529315
+                                                                        00529415
+FECHAA   DFHMDF POS=(2,60),LENGTH=10,ATTRB=PROT,INITIAL='99-99-9999',  *00529515
+               PICOUT='X(10)'                                           00529615
+         DFHMDF POS=(2,71),LENGTH=1,ATTRB=ASKIP                         00529715
+                                                                        00529815
+         DFHMDF POS=(5,9),LENGTH=20,ATTRB=PROT,COLOR=TURQUOISE,        *00529915
+               INITIAL='TIPO DE DOCUMENTO  :'                           00530015
+ALTTD    DFHMDF POS=(5,30),LENGTH=2,ATTRB=(IC,UNPROT,FSET),            *00530115
+               PICIN='X(02)',INITIAL='  ',COLOR=YELLOW                  00530215
+         DFHMDF POS=(5,33),LENGTH=01,ATTRB=ASKIP                        00530315
+                                                                        00530415
+         DFHMDF POS=(7,9),LENGTH=20,ATTRB=PROT,COLOR=TURQUOISE,        *00530515
+               INITIAL='NUMERO DE DOCUMENTO:'                           00530615
+ALTND    DFHMDF POS=(7,30),LENGTH=11,ATTRB=(UNPROT,NUM,FSET),          *00530715
+               PICIN='9(11)',COLOR=YELLOW,                             *00530815
+               PICOUT='9(11)'                                           00530915
+         DFHMDF POS=(7,42),LENGTH=01,ATTRB=(PROT,ASKIP)                 00531015
+                                                                        00531115
+         DFHMDF POS=(9,9),LENGTH=20,ATTRB=PROT,COLOR=TURQUOISE,        *00531223
+               INITIAL='NOMBRE Y APELLIDO  :'                           00531323
+ALTNA    DFHMDF POS=(9,30),LENGTH=30,ATTRB=(PROT,FSET,ASKIP),          *00531425
+               PICIN='X(30)',INITIAL='  ',COLOR=YELLOW                  00531523
+         DFHMDF POS=(9,61),LENGTH=01,ATTRB=ASKIP                        00531623
+                                                                        00531723
+         DFHMDF POS=(11,9),LENGTH=20,ATTRB=PROT,COLOR=TURQUOISE,       *00532223
+               INITIAL='NUMERO DE CAJA     :'                           00532323
+ALTNC    DFHMDF POS=(11,30),LENGTH=3,ATTRB=(UNPROT,NUM,FSET),          *00532423
+               PICIN='9(3)',COLOR=YELLOW,                              *00532523
+               PICOUT='9(3)'                                            00532623
+         DFHMDF POS=(11,34),LENGTH=01,ATTRB=(PROT,ASKIP)                00532723
+                                                                        00532815
+         DFHMDF POS=(13,9),LENGTH=20,ATTRB=PROT,COLOR=TURQUOISE,       *00532915
+               INITIAL='NUMERO DE CUENTA   :'                           00533015
+ALTNCTA  DFHMDF POS=(13,30),LENGTH=5,ATTRB=(UNPROT,NUM,FSET),          *00533115
+               PICIN='9(5)',COLOR=YELLOW,                              *00533215
+               PICOUT='9(5)'                                            00533315
+         DFHMDF POS=(13,36),LENGTH=01,ATTRB=(PROT,ASKIP)                00533415
+                                                                        00533515
+         DFHMDF POS=(15,9),LENGTH=23,ATTRB=PROT,COLOR=TURQUOISE,       *00533615
+               INITIAL='TIPO DE DOCUMENTO AUT.:'                        00533715
+ALTATD   DFHMDF POS=(15,33),LENGTH=2,ATTRB=(UNPROT,FSET),              *00533819
+               PICIN='X(02)',INITIAL='  ',COLOR=YELLOW                  00533915
+         DFHMDF POS=(15,36),LENGTH=01,ATTRB=ASKIP                       00534015
+                                                                        00534115
+         DFHMDF POS=(17,9),LENGTH=25,ATTRB=PROT,COLOR=TURQUOISE,       *00534215
+               INITIAL='NUMERO DE DOCUMENTO AUT.:'                      00534315
+ALTAND   DFHMDF POS=(17,35),LENGTH=11,ATTRB=(UNPROT,NUM,FSET),         *00534415
+               PICIN='9(11)',COLOR=YELLOW,                             *00534531
+               PICOUT='9(11)'                                           00534615
+         DFHMDF POS=(17,47),LENGTH=01,ATTRB=(PROT,ASKIP)                00534715
+                                                                        00534815
+         DFHMDF POS=(19,9),LENGTH=20,ATTRB=PROT,COLOR=TURQUOISE,       *00534915
+               INITIAL='BONIFICACION       :'                           00535015
+ALTBO    DFHMDF POS=(19,30),LENGTH=3,ATTRB=(UNPROT,NUM,FSET),          *00535115
+               PICIN='9(3)',COLOR=YELLOW,                              *00535215
+               PICOUT='9(3)'                                            00535315
+         DFHMDF POS=(19,34),LENGTH=01,ATTRB=(PROT,ASKIP)                00535415
+                                                                        00535515
+*        FECHA DE ALTA?                                                 00535615
+*        LA MANEJO POR PROGRAMA?                                        00535715
+                                                                        00535815
+ALTERR   DFHMDF POS=(22,3),LENGTH=72,INITIAL='',PICOUT='X(72)',        *00536628
+               COLOR=RED,ATTRB=(ASKIP,PROT)                             00536828
+         DFHMDF POS=(22,77),LENGTH=01,ATTRB=ASKIP                       00536915
+                                                                        00537015
+         DFHMDF POS=(24,10),LENGTH=62,COLOR=GREEN,                     *00537115
+               INITIAL='ENTER-CONFIRMA | PF3-VOLVER | PF9-BUSCAR CAJA'  00537226
+         DFHMDF POS=(24,73),LENGTH=01,ATTRB=ASKIP                       00537315
+                                                                        00537415
+*--------------------------------------------------------------------+  00537515
+* MAPA INICIAL PARA BAJA DE RELACION - MAPBAJ                        +  00537615
+*--------------------------------------------------------------------+  00537715
+                                                                        00537815
+MAPBAJ   DFHMDI SIZE=(24,80)                                            00537915
+                                                                        00538015
+         DFHMDF POS=(1,7),LENGTH=26,INITIAL='ABM RELACIONES - BAJA     *00538132
+               ',HILIGHT=UNDERLINE,ATTRB=(ASKIP,BRT)                    00538215
+         DFHMDF POS=(1,34),LENGTH=01,ATTRB=ASKIP                        00538315
+         DFHMDF POS=(1,60),LENGTH=12,ATTRB=PROT,INITIAL='S150-MAPBAJ '  00538432
+         DFHMDF POS=(1,73),LENGTH=01,ATTRB=ASKIP                        00538515
+                                                                        00538615
+FECHAB   DFHMDF POS=(2,60),LENGTH=10,ATTRB=PROT,INITIAL='99-99-9999',  *00538715
+               PICOUT='X(10)'                                           00538815
+         DFHMDF POS=(2,71),LENGTH=1,ATTRB=ASKIP                         00538915
+                                                                        00539015
+         DFHMDF POS=(5,9),LENGTH=20,ATTRB=PROT,COLOR=TURQUOISE,        *00539115
+               INITIAL='TIPO DE DOCUMENTO  :'                           00539215
+BAJTD    DFHMDF POS=(5,30),LENGTH=2,ATTRB=(IC,UNPROT,FSET),            *00539315
+               PICIN='X(02)',INITIAL='  ',COLOR=YELLOW                  00539415
+         DFHMDF POS=(5,33),LENGTH=01,ATTRB=ASKIP                        00539515
+                                                                        00539615
+         DFHMDF POS=(7,9),LENGTH=20,ATTRB=PROT,COLOR=TURQUOISE,        *00539715
+               INITIAL='NUMERO DE DOCUMENTO:'                           00539815
+BAJND    DFHMDF POS=(7,30),LENGTH=11,ATTRB=(UNPROT,NUM,FSET),          *00539915
+               PICIN='9(11)',COLOR=YELLOW,                             *00540015
+               PICOUT='9(11)'                                           00540115
+         DFHMDF POS=(7,42),LENGTH=01,ATTRB=(PROT,ASKIP)                 00540215
+                                                                        00540315
+         DFHMDF POS=(9,9),LENGTH=20,ATTRB=PROT,COLOR=TURQUOISE,        *00540415
+               INITIAL='NUMERO DE CAJA     :'                           00540515
+BAJNC    DFHMDF POS=(9,30),LENGTH=3,ATTRB=(UNPROT,NUM,FSET),           *00540615
+               PICIN='9(3)',COLOR=YELLOW,                              *00540715
+               PICOUT='9(3)'                                            00540815
+         DFHMDF POS=(9,34),LENGTH=01,ATTRB=(PROT,ASKIP)                 00540915
+                                                                        00544615
+BAJERR   DFHMDF POS=(22,4),LENGTH=72,INITIAL='',PICOUT='X(72)',        *00544732
+               COLOR=RED,ATTRB=(ASKIP,PROT)                             00544932
+         DFHMDF POS=(22,77),LENGTH=01,ATTRB=ASKIP                       00545015
+                                                                        00545115
+         DFHMDF POS=(24,10),LENGTH=62,COLOR=GREEN,                     *00545215
+               INITIAL='ENTER - CONFIRMA - PF3 - VOLVER   '             00545315
+         DFHMDF POS=(24,73),LENGTH=01,ATTRB=ASKIP                       00545415
+                                                                        00545515
+*--------------------------------------------------------------------+  00545615
+* MAPA INICIAL PARA MODIFICACION DE RELACION - MAPMOD                +  00545715
+*--------------------------------------------------------------------+  00545815
+                                                                        00545915
+MAPMOD   DFHMDI SIZE=(24,80)                                            00546015
+                                                                        00546115
+         DFHMDF POS=(1,7),LENGTH=26,INITIAL='ABM RELACIONES - ALTA     *00546215
+               ',HILIGHT=UNDERLINE,ATTRB=(ASKIP,BRT)                    00546315
+         DFHMDF POS=(1,34),LENGTH=01,ATTRB=ASKIP                        00546415
+         DFHMDF POS=(1,60),LENGTH=12,ATTRB=PROT,INITIAL='S150-MAPALT '  00546515
+         DFHMDF POS=(1,73),LENGTH=01,ATTRB=ASKIP                        00546615
+                                                                        00546715
+FECHAM   DFHMDF POS=(2,60),LENGTH=10,ATTRB=PROT,INITIAL='99-99-9999',  *00546815
+               PICOUT='X(10)'                                           00546915
+         DFHMDF POS=(2,71),LENGTH=1,ATTRB=ASKIP                         00547015
+                                                                        00547115
+         DFHMDF POS=(5,9),LENGTH=20,ATTRB=PROT,COLOR=TURQUOISE,        *00547215
+               INITIAL='TIPO DE DOCUMENTO  :'                           00547315
+MODTD    DFHMDF POS=(5,30),LENGTH=2,ATTRB=(IC,UNPROT,FSET),            *00547415
+               PICIN='X(02)',INITIAL='  ',COLOR=YELLOW                  00547515
+         DFHMDF POS=(5,33),LENGTH=01,ATTRB=ASKIP                        00547615
+                                                                        00547715
+         DFHMDF POS=(7,9),LENGTH=20,ATTRB=PROT,COLOR=TURQUOISE,        *00547815
+               INITIAL='NUMERO DE DOCUMENTO:'                           00547915
+MODND    DFHMDF POS=(7,30),LENGTH=11,ATTRB=(UNPROT,NUM,FSET),          *00548015
+               PICIN='9(11)',COLOR=YELLOW,                             *00548115
+               PICOUT='9(11)'                                           00548215
+         DFHMDF POS=(7,42),LENGTH=01,ATTRB=(PROT,ASKIP)                 00548315
+                                                                        00548415
+         DFHMDF POS=(9,9),LENGTH=20,ATTRB=PROT,COLOR=TURQUOISE,        *00548515
+               INITIAL='NUMERO DE CAJA     :'                           00548615
+MODNC    DFHMDF POS=(9,30),LENGTH=3,ATTRB=(UNPROT,NUM,FSET),           *00548715
+               PICIN='9(3)',COLOR=YELLOW,                              *00548815
+               PICOUT='9(3)'                                            00548915
+         DFHMDF POS=(9,34),LENGTH=01,ATTRB=(PROT,ASKIP)                 00549015
+                                                                        00549115
+MODERR   DFHMDF POS=(22,4),LENGTH=72,INITIAL='XXXXXXXXXXXXXXXXXXXXXXXXX*00549215
+               XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',PICOUT=*00549315
+               'X(72)',COLOR=RED,ATTRB=(ASKIP,PROT)                     00549415
+         DFHMDF POS=(22,77),LENGTH=01,ATTRB=ASKIP                       00549515
+                                                                        00549615
+         DFHMDF POS=(24,10),LENGTH=62,COLOR=GREEN,                     *00549715
+               INITIAL='ENTER - CONFIRMA - PF3 - VOLVER   '             00549815
+         DFHMDF POS=(24,73),LENGTH=01,ATTRB=ASKIP                       00549915
+                                                                        00550015
+         DFHMSD TYPE=FINAL                                              00551015
+         END                                                            00560003

@@ -1,0 +1,428 @@
+       CBL TEST                                                         00010006
+       IDENTIFICATION DIVISION.                                         00010101
+       PROGRAM-ID CSLA250.                                              00011099
+                                                                        00011123
+      *----------------------------------------------------------------+00012099
+      *  LISTADO DE AUTORIZADOS PARA CAJA DE SEGURIDAD                 *00014099
+      *  FECHA INICIO: 28/01/2023                                      *00016099
+      *  ENTRADAS    : ALU0050.RELACION.CLAS (RELACION CLASIFICADO)    *00016199
+      *  SALIDA      : ALU0050.CURSOS.LISTAU                           *00016299
+      *  AUTOR       : PBARI                                           *00016399
+      *----------------------------------------------------------------+00016499
+                                                                        00017099
+                                                                        00020006
+       ENVIRONMENT DIVISION.                                            00020206
+       CONFIGURATION SECTION.                                           00020306
+       SPECIAL-NAMES.                                                   00020406
+           DECIMAL-POINT IS COMMA.                                      00020506
+                                                                        00020606
+       INPUT-OUTPUT SECTION.                                            00020706
+       FILE-CONTROL.                                                    00020806
+                                                                        00020999
+             SELECT MCLIEN ASSIGN DDMCLI                                00021099
+                    ORGANIZATION IS INDEXED                             00022099
+                    ACCESS MODE IS RANDOM                               00022199
+                    RECORD KEY IS CLI-KEY                               00022299
+                    FILE STATUS IS WS-CLI-CODE.                         00022399
+                                                                        00022499
+             SELECT RELACION ASSIGN DDREL                               00022599
+                    FILE STATUS IS WS-REL-CODE.                         00022699
+                                                                        00022799
+             SELECT IMPRESION ASSIGN DDIMP                              00022899
+                    FILE STATUS IS WS-IMP-CODE.                         00022999
+                                                                        00023099
+       DATA DIVISION.                                                   00023106
+       FILE SECTION.                                                    00023206
+                                                                        00023399
+       FD MCLIEN.                                                       00023499
+       01 REG-CLI.                                                      00023599
+          03 CLI-KEY.                                                   00023699
+             05 TIP-DOC              PIC X(2).                          00023799
+             05 NRO-DOC              PIC 9(11).                         00023899
+          03 FILLER                  PIC X(147).                        00023999
+                                                                        00024823
+       FD RELACION                                                      00024999
+             BLOCK CONTAINS 0 RECORDS                                   00025099
+             RECORDING MODE IS F.                                       00025199
+                                                                        00025299
+       01 REG-REL        PIC X(80).                                     00025399
+                                                                        00025499
+       FD IMPRESION                                                     00025599
+             BLOCK CONTAINS 0 RECORDS                                   00025699
+             RECORDING MODE IS F.                                       00025799
+                                                                        00025899
+       01 REG-IMP        PIC X(132).                                    00025999
+                                                                        00026099
+                                                                        00026199
+       WORKING-STORAGE SECTION.                                         00026223
+                                                                        00026399
+       77  SORT-TABLA         PIC X(8)  VALUE 'TBSORT3'.                00026499
+       01  PUNTERO            POINTER.                                  00026599
+                                                                        00026699
+       77  WS-IMP-CODE        PIC XX    VALUE SPACES.                   00026799
+       77  WS-REL-CODE        PIC XX    VALUE SPACES.                   00026899
+       77  WS-CLI-CODE        PIC XX    VALUE SPACES.                   00026999
+                                                                        00027099
+       01  WS-EOF.                                                      00027176
+          05  WS-EOF-CLI      PIC X     VALUE 'N'.                      00027299
+                                                                        00027399
+       01  WS-PAGINAS         PIC 9(3)  VALUE ZERO.                     00027699
+       01  WS-LINEAS-PAGINAS  PIC 9(3)  VALUE 66.                       00029299
+       01  WS-CONTADOR-LINEAS PIC 9(3)  VALUE 100.                      00029999
+                                                                        00030699
+       01  WS-FECHA.                                                    00030799
+           05 WS-ANIO         PIC 9(4)  VALUE ZERO.                     00030899
+           05 WS-MES          PIC 9(2)  VALUE ZERO.                     00030999
+           05 WS-DIA          PIC 9(2)  VALUE ZERO.                     00031099
+           05 FILLER             PIC X(12) VALUE SPACES.                00031399
+                                                                        00031499
+       01  WS-FECHA2.                                                   00031599
+           05 WS-ANIO2        PIC 9(4)  VALUE ZERO.                     00031699
+           05 WS-MES2         PIC 9(2)  VALUE ZERO.                     00031799
+           05 WS-DIA2         PIC 9(2)  VALUE ZERO.                     00031899
+           05 FILLER          PIC X(12) VALUE SPACES.                   00031999
+                                                                        00032099
+      *---->  VARIABLES PARA SORT                                  <----00032199
+                                                                        00032299
+       01 ORDENADO            PIC X     VALUE 'N'.                      00032399
+       01 TMP-NOMAPE          PIC X(30) VALUE SPACES.                   00032499
+       01 TMP-TIPDOC          PIC X(2)  VALUE SPACES.                   00032599
+       01 TMP-NRODOC          PIC 9(11) VALUE ZERO.                     00032699
+       01 TMP-NROCAJ          PIC 9(3)  VALUE ZERO.                     00032799
+       01 TMP-TIPCAJ          PIC X(3)  VALUE SPACES.                   00032899
+                                                                        00032999
+       COPY CSRELAC.                                                    00033099
+       COPY CPPERSON.                                                   00033199
+                                                                        00033299
+      *---->   TABLA PARA GUARDAR INFO                             <----00033399
+                                                                        00033499
+       01 CANT-LEIDOS         PIC 9(3)  VALUE 1.                        00033599
+                                                                        00033699
+       01 TABLA-AUTORIZADO.                                             00033799
+          05 TB-AUT           OCCURS 1 TO 351 TIMES                     00033899
+                              DEPENDING ON CANT-LEIDOS                  00033999
+                              INDEXED BY AUT-INDEX.                     00034199
+                                                                        00034299
+             10 TB-AUT-NOMAPE PIC X(30) VALUE SPACES.                   00035399
+             10 TB-AUT-TIPDOC PIC X(2)  VALUE SPACES.                   00035499
+             10 TB-AUT-NRODOC PIC 9(11) VALUE ZERO.                     00035599
+             10 TB-AUT-NROCAJ PIC 9(3)  VALUE ZERO.                     00035699
+             10 TB-AUT-TIPCAJ PIC X(3)  VALUE ZERO.                     00035799
+                                                                        00036499
+      *---->   DEFINICION REPORTE                                  <----00036599
+                                                                        00036699
+       01  WS-SEPARADOR-XX    PIC X(132) VALUE ALL '*'.                 00036799
+       01  WS-SEPARADOR-SP    PIC X(132) VALUE SPACES.                  00036899
+                                                                        00036999
+       01  WS-HEADER-1.                                                 00037099
+           05 FILLER          PIC XX     VALUE '*'.                     00037199
+           05 FILLER          PIC X(10)  VALUE 'PROGRAMA:'.             00037299
+           05 WS-PROG-NAME    PIC X(29)  VALUE 'CSLA50'.                00037399
+           05 WS-TITLE        PIC X(68)                                 00037499
+                     VALUE 'LISTADO AUTORIZADOS DE CAJA           '.    00037599
+           05 FILLER          PIC X(7)   VALUE 'FECHA: '.               00037699
+           05 WS-IMP-DIA      PIC 99     VALUE ZERO.                    00037799
+           05 FILLER          PIC X      VALUE '/'.                     00037899
+           05 WS-IMP-MES      PIC 99     VALUE ZERO.                    00037999
+           05 FILLER          PIC X      VALUE '/'.                     00038099
+           05 WS-IMP-ANIO     PIC 9999   VALUE ZERO.                    00038199
+           05 FILLER          PIC X(5)   VALUE SPACES.                  00038299
+           05 FILLER          PIC X      VALUE '*'.                     00038399
+                                                                        00038499
+       01  WS-HEADER-2.                                                 00038599
+           05 FILLER          PIC X(109) VALUE '*'.                     00038699
+           05 FILLER          PIC X(8)   VALUE 'PAGINA:'.               00038799
+           05 WS-NUMERO-PAG   PIC ZZ9    VALUE ZERO.                    00038899
+           05 FILLER          PIC X(13)  VALUE SPACES.                  00038999
+           05 FILLER          PIC X      VALUE '*'.                     00039099
+                                                                        00039199
+       01  WS-HEADER-3.                                                 00039299
+           05 FILLER          PIC X      VALUE SPACES.                  00039399
+           05 FILLER          PIC X(30)  VALUE 'NOMBRE.APELLIDO'.       00039499
+           05 FILLER          PIC XXX    VALUE SPACES.                  00039599
+           05 FILLER          PIC X(7)   VALUE 'TIP.DOC'.               00039699
+           05 FILLER          PIC XXX    VALUE SPACES.                  00039799
+           05 FILLER          PIC X(11)  VALUE 'NRO.DOC'.               00039899
+           05 FILLER          PIC XXX    VALUE SPACES.                  00039999
+           05 FILLER          PIC X(7)   VALUE 'NRO.CAJ'.               00040099
+           05 FILLER          PIC XXX    VALUE SPACES.                  00040199
+           05 FILLER          PIC X(8)   VALUE 'TIPO.CAJ'.              00040299
+           05 FILLER          PIC XXX    VALUE SPACES.                  00040399
+           05 FILLER          PIC X(53)  VALUE SPACES.                  00040499
+                                                                        00040599
+       01  WS-REG-IMP.                                                  00040699
+           05 FILLER          PIC X      VALUE SPACES.                  00040799
+           05 IMP-NOMAPE      PIC X(30)  VALUE SPACES.                  00040899
+           05 FILLER          PIC XXX    VALUE SPACES.                  00040999
+           05 IMP-TIPDOC      PIC X(7)   VALUE SPACES.                  00041099
+           05 FILLER          PIC XXX    VALUE SPACES.                  00042099
+           05 IMP-NRODOC      PIC 9(11)  VALUE ZERO.                    00050099
+           05 FILLER          PIC XXX    VALUE SPACES.                  00069099
+           05 IMP-NROCAJ      PIC 9(7)   VALUE ZERO.                    00070099
+           05 FILLER          PIC XXX    VALUE SPACES.                  00070199
+           05 IMP-TIPCAJ      PIC X(8)   VALUE SPACES.                  00070299
+           05 FILLER          PIC XXX    VALUE SPACES.                  00070399
+           05 IMP-ESTADO      PIC X(20)  VALUE SPACES.                  00070499
+           05 FILLER          PIC X(33)  VALUE SPACES.                  00071899
+                                                                        00071999
+       LINKAGE SECTION.                                                 00072099
+                                                                        00072199
+       01 LK-AREA.                                                      00072299
+          05 LK-CAMPO            PIC 9(2).                              00072399
+          05 LK-ORDEN            PIC X(3).                              00072499
+          05 LK-TAMANO           PIC 9(3).                              00072599
+          05 LK-POINTER          POINTER.                               00072699
+          05 LK-ATTR             PIC 9.                                 00072799
+                                                                        00072899
+       PROCEDURE DIVISION USING LK-AREA.                                00072999
+      *----------------------------------------------------------------+00073099
+      *                                                                *00073124
+      *  CUERPO PRINCIPAL DEL PROGRAMA                                 *00073224
+      *                                                                *00073324
+      *----------------------------------------------------------------+00073499
+       MAIN-PROGRAM-INICIO.                                             00073501
+                                                                        00073600
+           PERFORM 1000-I-INICIO  THRU                                  00073701
+                   1000-F-INICIO.                                       00073801
+                                                                        00073901
+           PERFORM 2000-I-PROCESO  THRU                                 00074001
+                   2000-F-PROCESO  UNTIL WS-EOF = 'Y'.                  00074199
+                                                                        00074224
+           PERFORM 9999-I-CIERRE THRU                                   00074337
+                   9999-F-CIERRE.                                       00074437
+                                                                        00074501
+       MAIN-PROGRAM-FINAL.                                              00074648
+                                                                        00074748
+           GOBACK.                                                      00074848
+                                                                        00074948
+      *----------------------------------------------------------------+00075099
+      *                                                                *00075124
+      *  CUERPO INICIO APERTURA ARCHIVOS                               *00075224
+      *                                                                *00075324
+      *----------------------------------------------------------------+00075499
+       1000-I-INICIO.                                                   00075501
+                                                                        00075699
+           OPEN I-O MCLIEN.                                             00076299
+           IF WS-CLI-CODE IS NOT EQUAL '00'                             00076399
+              DISPLAY '* ERROR EN OPEN CLIENTE = ' WS-CLI-CODE          00076499
+              MOVE 'Y' TO WS-EOF                                        00076599
+           END-IF.                                                      00076699
+                                                                        00076799
+           OPEN INPUT RELACION.                                         00076899
+           IF WS-REL-CODE IS NOT EQUAL '00'                             00076999
+              DISPLAY '* ERROR EN OPEN CLIEN. = ' WS-REL-CODE           00077099
+              MOVE 'Y' TO WS-EOF                                        00077199
+           END-IF.                                                      00078099
+                                                                        00085070
+           OPEN OUTPUT IMPRESION.                                       00085199
+           IF WS-IMP-CODE IS NOT EQUAL '00'                             00085599
+              DISPLAY '* ERROR EN OPEN IMP. = ' WS-IMP-CODE             00085699
+              MOVE 'Y' TO WS-EOF                                        00085799
+           END-IF.                                                      00085899
+                                                                        00085999
+      *              ---> FECHA EN ENCABEZADO <---                      00086099
+           MOVE FUNCTION CURRENT-DATE TO WS-FECHA.                      00086199
+           MOVE WS-ANIO               TO WS-IMP-ANIO.                   00086299
+           MOVE WS-MES                TO WS-IMP-MES.                    00086399
+           MOVE WS-DIA                TO WS-IMP-DIA.                    00086499
+                                                                        00086599
+       1000-F-INICIO. EXIT.                                             00086869
+                                                                        00163099
+       2000-I-PROCESO.                                                  00165033
+                                                                        00165199
+           READ RELACION INTO CR-RELA.                                  00166099
+           EVALUATE WS-REL-CODE                                         00167099
+           WHEN '00'                                                    00168099
+                                                                        00168199
+             PERFORM 2100-I-BUSCAR-NOMAPE THRU                          00169099
+                     2100-F-BUSCAR-NOMAPE                               00170099
+                                                                        00170199
+             PERFORM 2200-I-GUARDAR-INFO-TB THRU                        00170299
+                     2200-F-GUARDAR-INFO-TB                             00170399
+                                                                        00170499
+                                                                        00171099
+           WHEN '10'                                                    00172799
+             MOVE 'Y' TO WS-EOF                                         00172899
+                                                                        00172999
+      *      PERFORM 2300-I-SORT-TB THRU                                00173099
+      *              2300-F-SORT-TB                                     00173199
+                                                                        00173299
+      *----------------------------------------------------------------*00173399
+             SET LK-POINTER TO ADDRESS OF TABLA-AUTORIZADO              00173499
+                                                                        00173599
+             MOVE 4           TO LK-CAMPO                               00173699
+             MOVE 'ASC'       TO LK-ORDEN                               00173799
+             MOVE CANT-LEIDOS TO LK-TAMANO                              00173899
+             MOVE 5           TO LK-ATTR                                00173999
+                                                                        00174099
+             CALL SORT-TABLA USING LK-AREA                              00174199
+      *----------------------------------------------------------------*00175699
+                                                                        00175799
+             PERFORM 2400-I-IMP-ARCHIVO THRU                            00175899
+                     2400-F-IMP-ARCHIVO                                 00175999
+                                                                        00176099
+           WHEN OTHER                                                   00176199
+             DISPLAY 'ERROR AL LEER RELACION ' WS-REL-CODE              00176299
+           END-EVALUATE.                                                00176399
+                                                                        00176499
+       2000-F-PROCESO. EXIT.                                            00176599
+                                                                        00176699
+      *BUSCA NOMBRE Y APELLIDO EN ARCHIVO CLIENTE                       00176799
+       2100-I-BUSCAR-NOMAPE.                                            00176899
+                                                                        00176999
+           MOVE CR-AUT-TDOC    TO TIP-DOC.                              00177099
+           MOVE CR-AUT-NDOC    TO NRO-DOC.                              00177199
+                                                                        00177299
+           READ MCLIEN INTO REG-PERSONA.                                00177399
+           EVALUATE WS-CLI-CODE                                         00177499
+              WHEN 00                                                   00177599
+                 CONTINUE                                               00177699
+              WHEN OTHER                                                00177799
+                    DISPLAY 'ERROR AL BUSCAR CLIENTE' WS-CLI-CODE       00177899
+                    MOVE 'Y' TO WS-EOF                                  00177999
+           END-EVALUATE.                                                00178099
+                                                                        00178199
+       2100-F-BUSCAR-NOMAPE. EXIT.                                      00178299
+                                                                        00178399
+      *GARDA INFO DE RELACION Y CLIENTE EN LA TABLA DE AUTORIZADO       00178499
+       2200-I-GUARDAR-INFO-TB.                                          00178599
+                                                                        00178699
+           MOVE PER-NOMAPE    TO TB-AUT-NOMAPE(AUT-INDEX).              00178799
+           MOVE CR-AUT-TDOC   TO TB-AUT-TIPDOC(AUT-INDEX).              00178899
+           MOVE CR-AUT-NDOC   TO TB-AUT-NRODOC(AUT-INDEX).              00178999
+           MOVE CR-NRO-CAJA   TO TB-AUT-NROCAJ(AUT-INDEX).              00179099
+           MOVE CR-TIPO       TO TB-AUT-TIPCAJ(AUT-INDEX).              00179199
+                                                                        00179299
+           ADD 1 TO CANT-LEIDOS.                                        00179399
+           SET AUT-INDEX   UP BY 1.                                     00179499
+                                                                        00179599
+       2200-F-GUARDAR-INFO-TB. EXIT.                                    00179699
+                                                                        00179799
+      *SORT ASCENDENTE DE LA TABLA POR NOMBRE Y APELLIDO                00179899
+                                                                        00179999
+       2300-I-SORT-TB.                                                  00180099
+                                                                        00180199
+           PERFORM UNTIL ORDENADO = 'Y'                                 00180299
+              MOVE 'Y' TO ORDENADO                                      00180399
+                                                                        00180499
+              INITIALIZE TMP-NOMAPE                                     00180599
+                         TMP-TIPDOC                                     00180699
+                         TMP-NRODOC                                     00180799
+                         TMP-NROCAJ                                     00180899
+                         TMP-TIPCAJ                                     00180999
+                                                                        00181099
+              PERFORM VARYING AUT-INDEX FROM 1 BY 1                     00181199
+                                UNTIL AUT-INDEX = (CANT-LEIDOS - 1)     00181299
+                 IF TB-AUT-NOMAPE(AUT-INDEX) >                          00181399
+                          TB-AUT-NOMAPE(AUT-INDEX + 1)                  00181499
+                                                                        00181599
+                    MOVE 'N' TO ORDENADO                                00181699
+                                                                        00181799
+                    MOVE TB-AUT-NOMAPE(AUT-INDEX) TO TMP-NOMAPE         00181899
+                    MOVE TB-AUT-TIPDOC(AUT-INDEX) TO TMP-TIPDOC         00181999
+                    MOVE TB-AUT-NRODOC(AUT-INDEX) TO TMP-NRODOC         00182099
+                    MOVE TB-AUT-NROCAJ(AUT-INDEX) TO TMP-NROCAJ         00182199
+                    MOVE TB-AUT-TIPCAJ(AUT-INDEX) TO TMP-TIPCAJ         00182299
+                                                                        00182399
+                    MOVE TB-AUT-NOMAPE(AUT-INDEX + 1) TO                00182499
+                                       TB-AUT-NOMAPE(AUT-INDEX)         00182599
+                    MOVE TB-AUT-TIPDOC(AUT-INDEX + 1) TO                00182699
+                                       TB-AUT-TIPDOC(AUT-INDEX)         00182799
+                    MOVE TB-AUT-NRODOC(AUT-INDEX + 1) TO                00182899
+                                       TB-AUT-NRODOC(AUT-INDEX)         00182999
+                    MOVE TB-AUT-NROCAJ(AUT-INDEX + 1) TO                00183099
+                                       TB-AUT-NROCAJ(AUT-INDEX)         00183199
+                    MOVE TB-AUT-TIPCAJ(AUT-INDEX + 1) TO                00183299
+                                       TB-AUT-TIPCAJ(AUT-INDEX)         00183399
+                                                                        00183499
+                    MOVE TMP-NOMAPE TO  TB-AUT-NOMAPE(AUT-INDEX + 1)    00183599
+                    MOVE TMP-TIPDOC TO  TB-AUT-TIPDOC(AUT-INDEX + 1)    00183699
+                    MOVE TMP-NRODOC TO  TB-AUT-NRODOC(AUT-INDEX + 1)    00183799
+                    MOVE TMP-NROCAJ TO  TB-AUT-NROCAJ(AUT-INDEX + 1)    00183899
+                    MOVE TMP-TIPCAJ TO  TB-AUT-TIPCAJ(AUT-INDEX + 1)    00183999
+                                                                        00184099
+                 END-IF                                                 00184199
+              END-PERFORM                                               00184299
+           END-PERFORM.                                                 00184399
+                                                                        00184499
+       2300-F-SORT-TB. EXIT.                                            00184599
+                                                                        00184699
+      *LEE LA TABLA Y LLAMA A LA IMPRESION DEL REPORTE                  00184799
+       2400-I-IMP-ARCHIVO.                                              00184899
+                                                                        00184999
+           PERFORM VARYING AUT-INDEX FROM 1 BY 1                        00185099
+                             UNTIL AUT-INDEX >= CANT-LEIDOS             00185199
+              INITIALIZE REG-IMP                                        00185299
+              MOVE TB-AUT-NOMAPE(AUT-INDEX) TO IMP-NOMAPE               00185399
+              MOVE TB-AUT-TIPDOC(AUT-INDEX) TO IMP-TIPDOC               00185499
+              MOVE TB-AUT-NRODOC(AUT-INDEX) TO IMP-NRODOC               00185599
+              MOVE TB-AUT-NROCAJ(AUT-INDEX) TO IMP-NROCAJ               00185699
+              MOVE TB-AUT-TIPCAJ(AUT-INDEX) TO IMP-TIPCAJ               00185799
+                                                                        00185899
+              PERFORM 2500-I-IMP-REGISTRO THRU                          00185999
+                      2500-F-IMP-REGISTRO                               00186099
+                                                                        00186199
+           END-PERFORM.                                                 00186299
+                                                                        00186399
+       2400-F-IMP-ARCHIVO. EXIT.                                        00186499
+                                                                        00186599
+      *IMPRIME EL REGISTRO DE IMPRESION EN EL ARCHIVO DE SALIDA         00186699
+       2500-I-IMP-REGISTRO.                                             00186799
+                                                                        00186899
+           IF WS-CONTADOR-LINEAS >= WS-LINEAS-PAGINAS                   00186999
+              PERFORM 2600-I-IMP-HEADER THRU                            00187099
+                      2600-F-IMP-HEADER                                 00187199
+           END-IF.                                                      00187299
+                                                                        00187399
+           WRITE REG-IMP FROM WS-REG-IMP AFTER 1.                       00187499
+                                                                        00187599
+           ADD 1 TO WS-CONTADOR-LINEAS.                                 00187699
+                                                                        00187799
+           IF WS-IMP-CODE IS NOT EQUAL '00'                             00187899
+              DISPLAY '* ERROR EN OPEN IMP. = ' WS-IMP-CODE             00187999
+              MOVE 'Y' TO WS-EOF                                        00188099
+           END-IF.                                                      00188199
+                                                                        00188299
+       2500-F-IMP-REGISTRO. EXIT.                                       00188399
+                                                                        00188499
+       2600-I-IMP-HEADER.                                               00188599
+                                                                        00188699
+           ADD 1 TO WS-PAGINAS.                                         00188799
+           MOVE WS-PAGINAS TO WS-NUMERO-PAG.                            00188899
+           WRITE REG-IMP FROM WS-SEPARADOR-XX AFTER PAGE.               00188999
+           WRITE REG-IMP FROM WS-HEADER-1     AFTER 1.                  00189099
+           WRITE REG-IMP FROM WS-HEADER-2     AFTER 1.                  00189199
+           WRITE REG-IMP FROM WS-SEPARADOR-XX AFTER 1.                  00189299
+           WRITE REG-IMP FROM WS-SEPARADOR-SP AFTER 1.                  00189399
+           WRITE REG-IMP FROM WS-HEADER-3     AFTER 1.                  00189499
+           MOVE 6 TO WS-CONTADOR-LINEAS.                                00189599
+                                                                        00189699
+       2600-F-IMP-HEADER. EXIT.                                         00189799
+                                                                        00190099
+                                                                        00205100
+      *----------------------------------------------------------------+00205299
+      *                                                                *00205399
+      *                   CUERPO CIERRE DE FILES                       *00206099
+      *----------------------------------------------------------------+00210099
+       9999-I-CIERRE.                                                   00230037
+                                                                        00240030
+           CLOSE MCLIEN.                                                00250099
+           IF WS-CLI-CODE IS NOT EQUAL '00'                             00260099
+              DISPLAY '* ERROR EN CLOSE CLIENTE = ' WS-CLI-CODE         00270099
+              MOVE 'Y' TO WS-EOF                                        00280099
+           END-IF.                                                      00290099
+                                                                        00311071
+           CLOSE RELACION                                               00312099
+             IF WS-REL-CODE IS NOT EQUAL '00'                           00313099
+                DISPLAY '* ERROR EN CLOSE CLIENTE' WS-REL-CODE          00314099
+                MOVE 'Y' TO WS-EOF                                      00315099
+             END-IF.                                                    00316071
+                                                                        00363199
+           CLOSE  IMPRESION                                             00364099
+             IF WS-IMP-CODE IS NOT EQUAL '00'                           00365099
+               DISPLAY '* ERROR EN CLOSE IMPRESION ' WS-IMP-CODE        00366099
+               MOVE 'Y' TO WS-EOF                                       00367099
+             END-IF.                                                    00368099
+                                                                        00369099
+       9999-F-CIERRE. EXIT.                                             00370069
+                                                                        00380069

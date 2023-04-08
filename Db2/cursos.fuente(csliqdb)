@@ -1,0 +1,622 @@
+       CBL TEST                                                         00010006
+       IDENTIFICATION DIVISION.                                         00010101
+       PROGRAM-ID CSLIQDB.                                              00011099
+                                                                        00011123
+      *----------------------------------------------------------------+00012099
+      *  PROCESO BATCH PARA LA LIQUIDADCION DE ALQUILERES DE           *00014099
+      *  CAJAS DE SEGURIDAD                                            *00015099
+      *  ACTUALIZANDO LOS ARCHIVOS NECESARIOS.                         *00015199
+      *                                                                *00015299
+      *----------------------------------------------------------------*00015399
+      *  FECHA INICIO: 20/03/2023                                      *00016099
+      *  FECHA FIN   :   /  /                                          *00016199
+      *                                                                *00016299
+      *                         ARCHIVOS                COPY           *00016399
+      *  ENTRADAS -> :                                                 *00016499
+      *                                                                *00016599
+      *                ALU0050.CLIENTE.KSDS.VSAM     (CSCLIEN)         *00016699
+      *                                                                *00016799
+      *                                                                *00016899
+      *  SALIDA ---> : ALU0050.LIQUI                 (CSLIQUI)         *00016999
+      *                ALU0050.LIQUI.REPORTE                           *00017099
+      *                                                                *00017199
+      *  AUTOR       : PBARI                                           *00017299
+      *----------------------------------------------------------------+00017399
+                                                                        00018099
+                                                                        00020006
+       ENVIRONMENT DIVISION.                                            00020206
+       CONFIGURATION SECTION.                                           00020306
+       SPECIAL-NAMES.                                                   00020406
+           DECIMAL-POINT IS COMMA.                                      00020506
+                                                                        00020606
+       INPUT-OUTPUT SECTION.                                            00020706
+       FILE-CONTROL.                                                    00020806
+                                                                        00020999
+      *    --->     ARCHIVOS ENTRADA         <---                       00021099
+                                                                        00021199
+             SELECT MCLIEN ASSIGN DDMCLI                                00021299
+                    ORGANIZATION IS INDEXED                             00021399
+                    ACCESS MODE IS RANDOM                               00021499
+                    RECORD KEY IS CLI-KEY                               00021599
+                    FILE STATUS IS WS-CLI-CODE.                         00021699
+                                                                        00022999
+      *    --->     ARCHIVOS SALIDA          <---                       00024699
+                                                                        00024799
+                                                                        00024899
+             SELECT REPORTE ASSIGN DDREP                                00024999
+                    FILE STATUS IS WS-REP-CODE.                         00025099
+                                                                        00025199
+             SELECT LIQUI ASSIGN DDLIQ                                  00025299
+                    FILE STATUS IS WS-LIQ-CODE.                         00025399
+                                                                        00025499
+       DATA DIVISION.                                                   00025506
+       FILE SECTION.                                                    00025606
+                                                                        00025923
+       FD MCLIEN.                                                       00026099
+       01 REG-CLI.                                                      00026199
+          03 CLI-KEY.                                                   00026299
+             05 TIP-DOC              PIC X(2).                          00026399
+             05 NRO-DOC              PIC 9(11).                         00026499
+          03 FILLER                  PIC X(147).                        00026599
+                                                                        00026699
+                                                                        00030599
+       FD REPORTE                                                       00030699
+             BLOCK CONTAINS 0 RECORDS                                   00030799
+             RECORDING MODE IS F.                                       00030899
+                                                                        00030999
+       01 NOV-REP        PIC X(132).                                    00031099
+                                                                        00031199
+       FD LIQUI                                                         00031299
+             BLOCK CONTAINS 0 RECORDS                                   00031399
+             RECORDING MODE IS F.                                       00031499
+                                                                        00031599
+       01 REG-LIQ        PIC X(80).                                     00031699
+                                                                        00031799
+       WORKING-STORAGE SECTION.                                         00031899
+                                                                        00031999
+       77  WS-REP-CODE         PIC XX       VALUE SPACES.               00032199
+       77  WS-CLI-CODE         PIC XX       VALUE SPACES.               00032299
+       77  WS-LIQ-CODE         PIC XX       VALUE SPACES.               00032399
+                                                                        00032599
+       77  WS-FACTOR-LIQ       PIC 99       VALUE 1.                    00032699
+       77  WS-PRECIO-CAJA      PIC S9(9)V99 VALUE ZEROS.                00032799
+                                                                        00032899
+       01  WS-EOF              PIC X     VALUE 'N'.                     00032999
+       01  TIPO                PIC X(3)  VALUE SPACES.                  00033099
+                                                                        00033199
+       01 I                    PIC 9    VALUE 1.                        00033299
+       01 WS-TOTAL-PROCESADOS  PIC 9(3) VALUE ZERO.                     00033999
+                                                                        00034399
+       01 METODO-LIQUIDACION   PIC 9    VALUE ZERO.                     00034499
+                                                                        00034699
+       COPY CSCLIEN.                                                    00034799
+       COPY CSLIQUI.                                                    00035099
+                                                                        00035199
+      *---->             TABLA LIQUIDACION                         <----00035299
+       77 WS-CANT-CAJAS        PIC 999      VALUE 351.                  00035399
+                                                                        00035499
+       01 TABLA-LIQUIDACION.                                            00035699
+          05 TBL-LIQUI OCCURS 351 TIMES                                 00035799
+                      INDEXED BY LIQ-INDEX.                             00035899
+                                                                        00035999
+             10 TBL-NROCLI        PIC 9(03)     VALUE ZEROS.            00037199
+             10 TBL-NROCUEN       PIC 9(05)     VALUE ZEROS.            00037299
+             10 TBL-IMPORTE       PIC S9(09)V99 VALUE ZEROS.            00037399
+             10 TBL-CODIGO        PIC 999       VALUE 300.              00037499
+             10 TBL-TIPDOC        PIC X(02)     VALUE SPACES.           00037599
+             10 TBL-NRODOC        PIC 9(11)     VALUE ZEROS.            00037699
+             10 TBL-NROCAJ        PIC 9(03)     VALUE ZEROS.            00037799
+             10 TBL-TIPCAJ        PIC X(03)     VALUE SPACES.           00037899
+             10 TBL-BONIF         PIC 9(03)     VALUE ZEROS.            00037999
+                                                                        00038199
+      *---->             TABLA DESCRIPCION CAJAS                   <----00038299
+       01 TABLA-DESC-CAJAS.                                             00038399
+          05 TBD-DESC  OCCURS 4 TIMES                                   00038499
+                      INDEXED BY DESC-INDEX.                            00038599
+             10 TBD-TIPO          PIC X(03)     VALUE SPACES.           00038699
+             10 TBD-COMI          PIC S9(09)V99 VALUE ZEROS.            00038799
+                                                                        00038899
+      *---->              COMIENZO INCLUDE SQL                     <----00038999
+                                                                        00039099
+       77 WS-SQLCODE    PIC +++999 USAGE DISPLAY VALUE ZEROS.           00039199
+                                                                        00039399
+            EXEC SQL                                                    00039499
+              INCLUDE SQLCA                                             00039599
+            END-EXEC.                                                   00039699
+                                                                        00039799
+      *   TABLA RELACION CAJA CLIENTE                                   00039899
+            EXEC SQL                                                    00039999
+              INCLUDE DBRELAC                                           00040099
+            END-EXEC.                                                   00040199
+                                                                        00040499
+      *   TABLA DESCRIPCION CAJAS                                       00040599
+            EXEC SQL                                                    00040699
+              INCLUDE DBDESC                                            00040799
+            END-EXEC.                                                   00040899
+                                                                        00040999
+      *---->             DECLARACION DE CURSORES                   <----00041099
+                                                                        00041199
+      *     CURSOR PARA LEER PRECIOS DE CAJAS                           00041299
+            EXEC SQL                                                    00041399
+              DECLARE DESCR CURSOR                                      00041499
+              FOR                                                       00041599
+                SELECT *                                                00041699
+                    FROM ITPARUT.CSDESCR                                00041799
+            END-EXEC.                                                   00041899
+                                                                        00041999
+      *     CURSOR PARA LEER RELACIONES DE CAJA/CLIENTE                 00042099
+            EXEC SQL                                                    00042199
+              DECLARE RELAC CURSOR                                      00042299
+              FOR                                                       00042399
+                SELECT *                                                00042499
+                    FROM ITPARUT.CSRELAC                                00042599
+            END-EXEC.                                                   00042699
+                                                                        00042799
+      *---->             COMIENZO FORMATO REPORTE                  <----00043599
+                                                                        00044099
+       01 WS-SEPARADOR-X        PIC X(132) VALUE ALL '*'.               00050099
+       01 WS-SEPARADOR-S        PIC X(132) VALUE ALL SPACES.            00070199
+                                                                        00070299
+                                                                        00070399
+       01  WS-HEADER-1.                                                 00070499
+           05 FILLER          PIC XX     VALUE '*'.                     00070599
+           05 FILLER          PIC X(10)  VALUE 'PROGRAMA:'.             00070699
+           05 WS-PROG-NAME    PIC X(29)  VALUE 'CSLIQ50'.               00070799
+           05 WS-TITLE        PIC X(58)                                 00070899
+                     VALUE 'LISTADO LIQUIDACION'.                       00070999
+           05 WS-TL           PIC X(10)  VALUE SPACES.                  00071099
+           05 FILLER          PIC X(7)   VALUE 'FECHA: '.               00071199
+           05 WS-IMP-DIA      PIC 99     VALUE ZERO.                    00071299
+           05 FILLER          PIC X      VALUE '/'.                     00071399
+           05 WS-IMP-MES      PIC 99     VALUE ZERO.                    00071499
+           05 FILLER          PIC X      VALUE '/'.                     00071599
+           05 WS-IMP-ANIO     PIC 9999   VALUE ZERO.                    00071699
+           05 FILLER          PIC X(5)   VALUE SPACES.                  00071799
+           05 FILLER          PIC X      VALUE '*'.                     00071899
+                                                                        00071999
+       01  WS-HEADER-2.                                                 00072099
+           05 FILLER          PIC XX     VALUE '*'.                     00072199
+           05 FILLER          PIC X(43)  VALUE SPACES.                  00072299
+           05 FILLER          PIC X(48)  VALUE SPACES.                  00072399
+           05 FILLER          PIC X(16)  VALUE SPACES.                  00072499
+           05 FILLER          PIC X(8)   VALUE 'PAGINA:'.               00072599
+           05 WS-PAG          PIC XXX    VALUE SPACES.                  00072699
+           05 FILLER          PIC X(11)  VALUE SPACES.                  00072799
+           05 FILLER          PIC X      VALUE '*'.                     00072899
+                                                                        00072999
+       01 WS-HEADER-3.                                                  00073099
+           05 FILLER          PIC X      VALUE SPACES.                  00073199
+           05 FILLER          PIC X(6)   VALUE 'TIPDOC'.                00073299
+           05 FILLER          PIC X(3)   VALUE SPACES.                  00073399
+           05 FILLER          PIC X(11)  VALUE 'NRODOC'.                00073499
+           05 FILLER          PIC X(3)   VALUE SPACES.                  00073599
+           05 FILLER          PIC X(6)   VALUE 'NROCLI'.                00073699
+           05 FILLER          PIC X(3)   VALUE SPACES.                  00073799
+           05 FILLER          PIC X(6)   VALUE 'NROCAJ'.                00073899
+           05 FILLER          PIC X(3)   VALUE SPACES.                  00073999
+           05 FILLER          PIC X(6)   VALUE 'TIPCAJ'.                00074099
+           05 FILLER          PIC X(3)   VALUE SPACES.                  00075099
+           05 FILLER          PIC X(6)   VALUE 'NROCTA'.                00075199
+           05 FILLER          PIC X(3)   VALUE SPACES.                  00075299
+           05 FILLER          PIC X(5)   VALUE 'BONIF'.                 00075399
+           05 FILLER          PIC X(3)   VALUE SPACES.                  00075499
+           05 FILLER          PIC X(11)  VALUE 'IMPORTE'.               00075599
+           05 FILLER          PIC X(3)   VALUE SPACES.                  00075699
+           05 FILLER          PIC X(6)   VALUE 'CODDEB'.                00075799
+           05 FILLER          PIC X(3)   VALUE SPACES.                  00075899
+           05 FILLER          PIC X(41)  VALUE SPACES.                  00075999
+                                                                        00076099
+       01 WS-REG-IMP.                                                   00076199
+          05  FILLER          PIC X        VALUE SPACES.                00076299
+          05  IMP-TIPDOC      PIC X(6)     VALUE SPACES.                00076399
+          05  FILLER          PIC X(3)     VALUE SPACES.                00076499
+          05  IMP-NRODOC      PIC 9(11)    VALUE ZERO.                  00076599
+          05  FILLER          PIC X(3)     VALUE SPACES.                00076699
+          05  IMP-NROCLI      PIC 9(6)     VALUE ZERO.                  00076799
+          05  FILLER          PIC X(3)     VALUE SPACES.                00076899
+          05  IMP-NROCAJ      PIC 9(6)     VALUE ZEROS.                 00076999
+          05  FILLER          PIC X(3)     VALUE SPACES.                00077099
+          05  IMP-TIPCAJ      PIC X(6)     VALUE SPACES.                00078099
+          05  FILLER          PIC X(3)     VALUE SPACES.                00079099
+          05  IMP-NROCTA      PIC 9(6)     VALUE ZERO.                  00080099
+          05  FILLER          PIC X(3)     VALUE SPACES.                00081099
+          05  IMP-BONIF       PIC 9(5)     VALUE ZERO.                  00082099
+          05  FILLER          PIC X(3)     VALUE SPACES.                00082199
+          05  IMP-IMPORTE     PIC $Z(9),99 VALUE ZERO.                  00082299
+          05  FILLER          PIC X(3)     VALUE SPACES.                00082399
+          05  IMP-CODDEB      PIC 9(6)     VALUE ZERO.                  00082499
+          05  FILLER          PIC X(44)    VALUE SPACES.                00082699
+                                                                        00082799
+      *---->          VARIABLES CONTROL IMPRESION                  <----00082899
+       01  WS-PAGINAS         PIC 9(3)  VALUE ZERO.                     00082999
+       01  WS-LINEAS-PAGINAS  PIC 9(3)  VALUE 66.                       00083099
+       01  WS-CONTADOR-LINEAS PIC 9(3)  VALUE 100.                      00083199
+                                                                        00083299
+       01  WS-FECHA.                                                    00083399
+           05 WS-ANIO         PIC 9(4)  VALUE ZERO.                     00083499
+           05 WS-MES          PIC 9(2)  VALUE ZERO.                     00083599
+           05 WS-DIA          PIC 9(2)  VALUE ZERO.                     00083699
+           05 FILLER          PIC X(12) VALUE SPACES.                   00083799
+                                                                        00083899
+       LINKAGE SECTION.                                                 00084499
+                                                                        00085199
+       PROCEDURE DIVISION.                                              00085299
+      *----------------------------------------------------------------+00085399
+      *                                                                *00085424
+      *  CUERPO PRINCIPAL DEL PROGRAMA                                 *00085524
+      *                                                                *00085624
+      *----------------------------------------------------------------+00085799
+       MAIN-PROGRAM-INICIO.                                             00085801
+                                                                        00085900
+           PERFORM 1000-I-INICIO  THRU                                  00086001
+                   1000-F-INICIO.                                       00086101
+                                                                        00086201
+           PERFORM 2000-I-PROCESO  THRU                                 00086301
+                   2000-F-PROCESO  UNTIL WS-EOF = 'Y'.                  00086499
+                                                                        00086524
+           PERFORM 9999-I-CIERRE THRU                                   00086637
+                   9999-F-CIERRE.                                       00086737
+                                                                        00086801
+       MAIN-PROGRAM-FINAL.                                              00086948
+                                                                        00087148
+           GOBACK.                                                      00087248
+                                                                        00087348
+      *----------------------------------------------------------------+00087499
+      *                                                                *00087524
+      *  CUERPO INICIO APERTURA ARCHIVOS                               *00087624
+      *                                                                *00087724
+      *----------------------------------------------------------------+00087899
+       1000-I-INICIO.                                                   00087901
+                                                                        00088099
+           ACCEPT METODO-LIQUIDACION FROM SYSIN.                        00088199
+                                                                        00088399
+      *    OPEN DE ARCHIVOS CLIENTE / LIQUIDACION / DETALLE LIQ         00088499
+           OPEN INPUT MCLIEN.                                           00088599
+           IF WS-CLI-CODE IS NOT EQUAL '00'                             00088699
+              DISPLAY '* ERROR EN OPEN CLIENTES  = ' WS-CLI-CODE        00088799
+              MOVE 'Y' TO WS-EOF                                        00088899
+           END-IF.                                                      00088999
+                                                                        00089099
+           OPEN OUTPUT REPORTE.                                         00090599
+           IF WS-REP-CODE IS NOT EQUAL '00'                             00090699
+              DISPLAY '* ERROR EN OPEN REPORTE =  ' WS-REP-CODE         00090799
+              MOVE 'Y' TO WS-EOF                                        00090899
+           END-IF.                                                      00090999
+                                                                        00091799
+           OPEN OUTPUT LIQUI.                                           00091899
+           IF WS-LIQ-CODE IS NOT EQUAL '00'                             00091999
+              DISPLAY '* ERROR EN OPEN LIQUI   =  ' WS-LIQ-CODE         00092099
+              MOVE 'Y' TO WS-EOF                                        00092199
+           END-IF.                                                      00092299
+                                                                        00092399
+      *    OPEN CURSORES                                                00092499
+           EXEC SQL                                                     00092599
+              OPEN DESCR                                                00092699
+           END-EXEC.                                                    00092799
+                                                                        00092899
+           IF SQLCODE NOT EQUAL ZEROS                                   00092999
+              MOVE SQLCODE   TO WS-SQLCODE                              00093099
+              DISPLAY '* ERROR OPEN CURSOR DESC = ' WS-SQLCODE          00093199
+              MOVE 'Y' TO WS-EOF                                        00093399
+           END-IF.                                                      00093499
+                                                                        00093599
+           EXEC SQL                                                     00093699
+              OPEN RELAC                                                00093799
+           END-EXEC.                                                    00093899
+                                                                        00093999
+           IF SQLCODE NOT EQUAL ZEROS                                   00094099
+              MOVE SQLCODE   TO WS-SQLCODE                              00094199
+              DISPLAY '* ERROR OPEN CURSOR RELA = ' WS-SQLCODE          00094299
+              MOVE 'Y' TO WS-EOF                                        00094499
+           END-IF.                                                      00094599
+                                                                        00094699
+      *              ---> FECHA EN ENCABEZADO <---                      00094799
+           MOVE FUNCTION CURRENT-DATE TO WS-FECHA.                      00094899
+           MOVE WS-ANIO               TO WS-IMP-ANIO.                   00094999
+           MOVE WS-MES                TO WS-IMP-MES.                    00095099
+           MOVE WS-DIA                TO WS-IMP-DIA.                    00095199
+                                                                        00095299
+      *---->         CARGO TABLA CON PRECIOS DE CAJAS              <----00095399
+                                                                        00095499
+           SET DESC-INDEX TO 1.                                         00095599
+           PERFORM 1100-I-CARGAR-IMPORTES THRU                          00095699
+                   1100-F-CARGAR-IMPORTES UNTIL WS-EOF = 'Y'.           00095799
+           MOVE 'N' TO WS-EOF.                                          00095899
+                                                                        00095999
+      *    LIQUIDACION MENSUAL                                          00096099
+           IF METODO-LIQUIDACION = 1                                    00096199
+              CONTINUE                                                  00096299
+              MOVE 'MENSUAL' TO WS-TL                                   00096399
+           END-IF.                                                      00096499
+                                                                        00097099
+      *    LIQUIDACION TRIMESTRAL                                       00097199
+           IF METODO-LIQUIDACION = 2                                    00098099
+              IF WS-MES EQUAL (3 OR 6 OR 9 OR 12)                       00099099
+                 MOVE 3 TO WS-FACTOR-LIQ                                00099199
+                 MOVE 'TRIMESTRAL' TO WS-TL                             00099299
+              ELSE                                                      00099399
+                 MOVE 'Y' TO WS-EOF                                     00099499
+              END-IF                                                    00099599
+           END-IF.                                                      00099699
+                                                                        00099799
+      *    LIQUIDACION SEMESTRAL                                        00099899
+           IF METODO-LIQUIDACION = 3                                    00099999
+              IF WS-MES EQUAL (6 OR 12)                                 00100099
+                 MOVE 6 TO WS-FACTOR-LIQ                                00100199
+                 MOVE 'SEMESTRAL' TO WS-TL                              00100299
+              ELSE                                                      00100399
+                 MOVE 'Y' TO WS-EOF                                     00100499
+              END-IF                                                    00100599
+           END-IF.                                                      00100699
+                                                                        00101099
+      *    LIQUIDACION ANUAL                                            00102099
+           IF METODO-LIQUIDACION = 4                                    00103099
+              IF WS-MES EQUAL 12                                        00104099
+                 MOVE 12 TO WS-FACTOR-LIQ                               00105099
+                 MOVE 'ANUAL' TO WS-TL                                  00105199
+              ELSE                                                      00106099
+                 MOVE 'Y' TO WS-EOF                                     00107099
+              END-IF                                                    00108099
+           END-IF.                                                      00109099
+                                                                        00109199
+      *    SIN LIQUIDACION                                              00109299
+           IF METODO-LIQUIDACION = 0                                    00109399
+              DISPLAY 'NO SE VA A LIQUIDAR'                             00109499
+              MOVE 'Y' TO WS-EOF                                        00109599
+           END-IF.                                                      00109699
+                                                                        00109799
+       1000-F-INICIO. EXIT.                                             00110069
+                                                                        00163099
+       1100-I-CARGAR-IMPORTES.                                          00163199
+                                                                        00163299
+           EXEC SQL                                                     00163399
+              FETCH DESCR INTO                                          00163499
+                 :CD-CS-TIP-CAJA,                                       00163599
+                 :CD-CS-ANCHO,                                          00163699
+                 :CD-CS-ALTO,                                           00163799
+                 :CD-CS-PROFU,                                          00163899
+                 :CD-CS-COMI,                                           00163999
+                 :CD-CS-SEGURO,                                         00164099
+                 :CD-CS-COSTO-LLAVE,                                    00164199
+                 :CD-CS-UBICACION-I,                                    00164299
+                 :CD-CS-UBICACION-F                                     00164399
+           END-EXEC                                                     00164499
+                                                                        00164599
+           EVALUATE TRUE                                                00165499
+           WHEN SQLCODE EQUAL ZERO                                      00165599
+              MOVE CD-CS-TIP-CAJA TO TBD-TIPO(DESC-INDEX)               00165699
+              MOVE CD-CS-COMI     TO TBD-COMI(DESC-INDEX)               00165799
+              SET DESC-INDEX UP BY 1                                    00165899
+           WHEN SQLCODE EQUAL +100                                      00165999
+              MOVE 'Y'         TO WS-EOF                                00166099
+           WHEN OTHER                                                   00166199
+              MOVE SQLCODE TO WS-SQLCODE                                00166299
+              DISPLAY 'ERROR FETCH CURSOR DESCR ' WS-SQLCODE            00166399
+              MOVE 'Y'         TO WS-EOF                                00166499
+           END-EVALUATE.                                                00166599
+                                                                        00166699
+       1100-F-CARGAR-IMPORTES. EXIT.                                    00166799
+                                                                        00166899
+       2000-I-PROCESO.                                                  00166999
+           EXEC SQL                                                     00167099
+              FETCH RELAC INTO                                          00167199
+                 :CR-CS-TIP-DOC,                                        00167299
+                 :CR-CS-NRO-DOC,                                        00167399
+                 :CR-CS-NRO-CAJA,                                       00167499
+                 :CR-CS-TIP-CUENTA,                                     00167599
+                 :CR-CS-NRO-CUENTA,                                     00167699
+                 :CR-CS-TIP-DOC-AUT,                                    00167799
+                 :CR-CS-NRO-DOC-AUT,                                    00167899
+                 :CR-CS-POR-BONIF-COMI,                                 00167999
+                 :CR-CS-FEC-ALTA                                        00168099
+           END-EXEC                                                     00168199
+                                                                        00172599
+           EVALUATE TRUE                                                00172899
+           WHEN SQLCODE EQUAL ZERO                                      00172999
+              ADD 1 TO WS-TOTAL-PROCESADOS                              00173099
+                                                                        00173199
+              PERFORM 2100-I-BUSCAR-NROCLI THRU                         00173299
+                      2100-F-BUSCAR-NROCLI                              00173399
+                                                                        00173499
+              PERFORM 2200-I-CALCULAR-LIQ THRU                          00173599
+                      2200-F-CALCULAR-LIQ                               00173699
+           WHEN SQLCODE EQUAL +100                                      00173799
+              MOVE 'Y'        TO WS-EOF                                 00173899
+                                                                        00173999
+              PERFORM 2300-I-ESCRIBIR-ARCHIVOS THRU                     00174099
+                      2300-F-ESCRIBIR-ARCHIVOS                          00174199
+                                                                        00174299
+           WHEN OTHER                                                   00174399
+              MOVE SQLCODE TO WS-SQLCODE                                00174499
+              DISPLAY 'ERROR FETCH RELACIONES ' WS-SQLCODE              00174599
+           END-EVALUATE.                                                00174699
+                                                                        00174799
+       2000-F-PROCESO. EXIT.                                            00175069
+                                                                        00175699
+       2100-I-BUSCAR-NROCLI.                                            00175799
+                                                                        00175899
+           MOVE CR-CS-TIP-DOC TO TIP-DOC                                00175999
+           MOVE CR-CS-NRO-DOC TO NRO-DOC                                00176099
+           READ MCLIEN INTO REG-CLIENTE KEY IS CLI-KEY                  00176199
+           EVALUATE WS-CLI-CODE                                         00176299
+           WHEN '00'                                                    00176399
+              CONTINUE                                                  00176499
+           WHEN OTHER                                                   00176599
+              DISPLAY 'ERROR AL BUSCAR NROCLI ' WS-CLI-CODE             00176699
+           END-EVALUATE.                                                00176799
+                                                                        00176899
+       2100-F-BUSCAR-NROCLI. EXIT.                                      00177099
+                                                                        00178099
+       2200-I-CALCULAR-LIQ.                                             00179099
+                                                                        00179199
+           PERFORM 2210-I-BUSCAR-PRECIO-CAJA THRU                       00179299
+                   2210-F-BUSCAR-PRECIO-CAJA                            00179399
+                                                                        00179499
+           SET LIQ-INDEX           TO CR-CS-NRO-CAJA.                   00179599
+                                                                        00179699
+           MOVE CLI-CLI-NRO        TO TBL-NROCLI(LIQ-INDEX).            00179799
+           MOVE CR-CS-NRO-CUENTA   TO TBL-NROCUEN(LIQ-INDEX).           00179899
+                                                                        00179999
+                                                                        00180099
+           COMPUTE TBL-IMPORTE(LIQ-INDEX) =                             00180199
+                    (WS-PRECIO-CAJA -                                   00180299
+                     ((WS-PRECIO-CAJA * CR-CS-POR-BONIF-COMI) / 100)) * 00180399
+                        WS-FACTOR-LIQ.                                  00180499
+                                                                        00180599
+           MOVE CR-CS-TIP-DOC        TO TBL-TIPDOC(LIQ-INDEX).          00180699
+           MOVE CR-CS-NRO-DOC        TO TBL-NRODOC(LIQ-INDEX).          00180799
+           MOVE CR-CS-NRO-CAJA       TO TBL-NROCAJ(LIQ-INDEX).          00180899
+           MOVE TIPO                 TO TBL-TIPCAJ(LIQ-INDEX).          00180999
+           MOVE CR-CS-POR-BONIF-COMI TO TBL-BONIF(LIQ-INDEX).           00181099
+                                                                        00181199
+       2200-F-CALCULAR-LIQ. EXIT.                                       00181299
+                                                                        00181399
+                                                                        00181499
+       2210-I-BUSCAR-PRECIO-CAJA.                                       00182099
+                                                                        00182199
+           IF CR-CS-NRO-CAJA >= 1 AND CR-CS-NRO-CAJA <= 121             00182299
+              MOVE 'SMA' TO TIPO                                        00182399
+           END-IF.                                                      00182499
+                                                                        00182599
+           IF CR-CS-NRO-CAJA >= 122 AND CR-CS-NRO-CAJA <= 221           00182699
+              MOVE 'MED' TO TIPO                                        00182799
+           END-IF.                                                      00182899
+                                                                        00182999
+           IF CR-CS-NRO-CAJA >= 222 AND CR-CS-NRO-CAJA <= 321           00183099
+              MOVE 'LAR' TO TIPO                                        00183199
+           END-IF.                                                      00183299
+                                                                        00183399
+           IF CR-CS-NRO-CAJA >= 322 AND CR-CS-NRO-CAJA <= 351           00183499
+              MOVE 'HIP' TO TIPO                                        00183599
+           END-IF.                                                      00183699
+                                                                        00183899
+           SET DESC-INDEX TO 1.                                         00183999
+           SEARCH TBD-DESC                                              00184099
+              AT END DISPLAY 'NO ENCUENTRO VALOR CAJA '                 00184199
+              WHEN TBD-TIPO(DESC-INDEX) = TIPO                          00184299
+                 MOVE TBD-COMI(DESC-INDEX) TO WS-PRECIO-CAJA            00184399
+           END-SEARCH.                                                  00184499
+                                                                        00184599
+       2210-F-BUSCAR-PRECIO-CAJA. EXIT.                                 00184699
+                                                                        00184799
+       2300-I-ESCRIBIR-ARCHIVOS.                                        00185099
+                                                                        00185199
+           PERFORM VARYING LIQ-INDEX FROM 1 BY 1                        00185399
+                             UNTIL LIQ-INDEX >= WS-CANT-CAJAS           00185499
+                                                                        00185599
+              IF TBL-IMPORTE(LIQ-INDEX) > 0                             00185699
+                 INITIALIZE REG-LIQUIDACION                             00185799
+                 INITIALIZE WS-REG-IMP                                  00185899
+                                                                        00185999
+      *---->           MAESTRO LIQUIDACION                         <----00186099
+                 MOVE TBL-NROCLI(LIQ-INDEX)   TO LI-NRO-CLI             00186199
+                 MOVE TBL-NROCUEN(LIQ-INDEX)  TO LI-NRO-CTA             00186299
+                 MOVE TBL-CODIGO(LIQ-INDEX)   TO LI-NRO-COD             00186399
+                 MOVE TBL-IMPORTE(LIQ-INDEX)  TO LI-IMPORTE             00186499
+                                                                        00186599
+                 WRITE REG-LIQ FROM REG-LIQUIDACION                     00186699
+                 IF WS-LIQ-CODE IS NOT EQUAL '00'                       00186799
+                    DISPLAY 'ERROR GRABAR EN M LIQ ' WS-LIQ-CODE        00186899
+                    MOVE 352 TO I                                       00186999
+                 END-IF                                                 00187099
+                                                                        00187199
+      *---->           LISTADO LIQUIDACION                         <----00187299
+                 MOVE TBL-TIPDOC(LIQ-INDEX)   TO IMP-TIPDOC             00187399
+                 MOVE TBL-NRODOC(LIQ-INDEX)   TO IMP-NRODOC             00187499
+                 MOVE TBL-NROCLI(LIQ-INDEX)   TO IMP-NROCLI             00187599
+                 MOVE TBL-NROCAJ(LIQ-INDEX)   TO IMP-NROCAJ             00187699
+                 MOVE TBL-TIPCAJ(LIQ-INDEX)   TO IMP-TIPCAJ             00187799
+                 MOVE TBL-NROCUEN(LIQ-INDEX)  TO IMP-NROCTA             00187899
+                 MOVE TBL-BONIF(LIQ-INDEX)    TO IMP-BONIF              00187999
+                 MOVE TBL-IMPORTE(LIQ-INDEX)  TO IMP-IMPORTE            00188099
+                 MOVE TBL-CODIGO(LIQ-INDEX)   TO IMP-CODDEB             00188199
+                                                                        00188299
+                 PERFORM 3510-I-IMP-REPORTE THRU                        00188399
+                         3510-F-IMP-REPORTE                             00188499
+              END-IF                                                    00188599
+                                                                        00188699
+           END-PERFORM.                                                 00188799
+                                                                        00188899
+       2300-F-ESCRIBIR-ARCHIVOS. EXIT.                                  00188999
+                                                                        00189099
+       3510-I-IMP-REPORTE.                                              00223299
+           IF WS-CONTADOR-LINEAS >= WS-LINEAS-PAGINAS                   00223399
+              PERFORM 3520-I-IMP-HEADER THRU                            00223499
+                      3520-F-IMP-HEADER                                 00223599
+           END-IF.                                                      00223699
+                                                                        00223799
+           WRITE NOV-REP FROM WS-REG-IMP AFTER 1.                       00223899
+           IF WS-REP-CODE IS NOT EQUAL '00'                             00223999
+              DISPLAY '* ERROR EN WRITE REPORTE = ' WS-REP-CODE         00224099
+              MOVE 352 TO I                                             00224199
+           END-IF.                                                      00224299
+           ADD 1 TO WS-CONTADOR-LINEAS.                                 00224399
+           INITIALIZE WS-REG-IMP.                                       00224499
+                                                                        00224599
+       3510-F-IMP-REPORTE. EXIT.                                        00224699
+                                                                        00224799
+       3520-I-IMP-HEADER.                                               00224899
+           ADD 1 TO WS-PAGINAS.                                         00224999
+           MOVE WS-PAGINAS TO WS-PAG.                                   00225099
+                                                                        00225199
+           WRITE NOV-REP FROM WS-SEPARADOR-X  AFTER PAGE.               00225299
+           WRITE NOV-REP FROM WS-HEADER-1     AFTER 1.                  00225399
+           WRITE NOV-REP FROM WS-HEADER-2     AFTER 1.                  00225499
+           WRITE NOV-REP FROM WS-SEPARADOR-X  AFTER 1.                  00225599
+           WRITE NOV-REP FROM WS-SEPARADOR-S  AFTER 1.                  00225699
+           WRITE NOV-REP FROM WS-HEADER-3     AFTER 1.                  00225799
+                                                                        00225899
+           MOVE 6 TO WS-CONTADOR-LINEAS.                                00225999
+                                                                        00226099
+       3520-F-IMP-HEADER. EXIT.                                         00226199
+      *----------------------------------------------------------------+00226299
+      *                                                                *00226399
+      *                   CUERPO CIERRE DE FILES                       *00226499
+      *----------------------------------------------------------------+00227099
+       9999-I-CIERRE.                                                   00230037
+                                                                        00240099
+           CLOSE MCLIEN.                                                00241099
+           IF WS-CLI-CODE IS NOT EQUAL '00'                             00242099
+              DISPLAY '* ERROR EN CLOSE CLIENTE  = ' WS-CLI-CODE        00243099
+              MOVE 'Y' TO WS-EOF                                        00244099
+           END-IF.                                                      00245099
+                                                                        00246099
+           CLOSE REPORTE.                                               00310099
+           IF WS-REP-CODE IS NOT EQUAL '00'                             00320099
+              DISPLAY '* ERROR EN CLOSE REPORTE =  ' WS-REP-CODE        00321099
+              MOVE 'Y' TO WS-EOF                                        00322099
+           END-IF.                                                      00323099
+                                                                        00324099
+           CLOSE LIQUI.                                                 00325099
+           IF WS-LIQ-CODE IS NOT EQUAL '00'                             00326099
+              DISPLAY '* ERROR EN CLOSE M LIQ   =  ' WS-LIQ-CODE        00327099
+              MOVE 'Y' TO WS-EOF                                        00328099
+           END-IF.                                                      00329099
+                                                                        00329199
+           EXEC SQL                                                     00329299
+              CLOSE RELAC                                               00329399
+           END-EXEC.                                                    00329499
+                                                                        00329599
+           IF SQLCODE NOT EQUAL ZEROS                                   00329699
+              MOVE SQLCODE   TO WS-SQLCODE                              00329799
+              DISPLAY '* ERROR OPEN CURSOR RELAC = ' WS-SQLCODE         00329899
+              MOVE 'Y' TO WS-EOF                                        00330099
+           END-IF.                                                      00330199
+                                                                        00330299
+           EXEC SQL                                                     00330399
+              CLOSE DESCR                                               00330499
+           END-EXEC.                                                    00330599
+                                                                        00330699
+           IF SQLCODE NOT EQUAL ZEROS                                   00330799
+              MOVE SQLCODE   TO WS-SQLCODE                              00330899
+              DISPLAY '* ERROR OPEN CURSOR DESCR = ' WS-SQLCODE         00330999
+              MOVE 'Y' TO WS-EOF                                        00331199
+           END-IF.                                                      00331299
+                                                                        00331399
+           DISPLAY '+---------------------------------------+'.         00331499
+           DISPLAY '          ESTADISTICAS                   '.         00331599
+           DISPLAY '+---------------------------------------+'.         00331699
+           DISPLAY 'TOTAL PROCESADOS: ' WS-TOTAL-PROCESADOS.            00332099
+                                                                        00340099
+       9999-F-CIERRE. EXIT.                                             00370069
+                                                                        00380069

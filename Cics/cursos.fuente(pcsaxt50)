@@ -1,0 +1,250 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. PCSAXT50.
+
+      *    +-----------------------------------------------------------+
+      *    +    COBOL CICS - SUBMENU SIS. CAJAS DE SEGURIDAD PARA ABM  +
+      *    +    TRANS ID: S150                                         +
+      *    +    MAP     : MAP0450                                      +
+      *    +-----------------------------------------------------------+
+
+       DATA DIVISION.
+       FILE SECTION.
+       WORKING-STORAGE SECTION.
+
+       77 WS-START        PIC X(20) VALUE 'WS START'.
+
+       01 WS-ABSTIME           PIC S9(16) COMP VALUE +0.
+       01 WS-FECHA             PIC X(10)       VALUE SPACES.
+       01 WS-SEP-FECHA         PIC X           VALUE '/'.
+       77 WS-LONG              PIC S9(04) COMP.
+       01 WS-RESP              PIC S9(04) COMP.
+       01 WS-SALE              PIC X(30)       VALUE SPACES.
+       01 NOMBRE-PROG          PIC X(8)        VALUE SPACES.
+
+       01 WS-COMMAREA          PIC X.
+
+       01 SEND-FLAG            PIC X.
+          88 SEND-ERASE                 VALUE '1'.
+          88 SEND-DATAONLY              VALUE '2'.
+          88 SEND-DATAONLY-ALARM        VALUE '3'.
+
+
+       COPY MAP0450.
+       COPY DFHAID.
+
+       LINKAGE SECTION.
+
+       01 DFHCOMMAREA               PIC X.
+
+       PROCEDURE DIVISION.
+       MAIN-PROGRAM.
+           EVALUATE TRUE
+
+              WHEN EIBCALEN = ZEROS
+                 MOVE LOW-VALUES TO MAPKEYO
+                 SET SEND-ERASE TO TRUE
+                 MOVE 'SELECCIONE UNA OPCION' TO KEYERRO
+                 PERFORM 1500-I-SEND-MAP THRU 1500-F-SEND-MAP
+
+              WHEN EIBAID = DFHPF1
+                 PERFORM 4100-I-PF1 THRU 4100-F-PF1
+              WHEN EIBAID = DFHPF3
+                 PERFORM 4200-I-PF3 THRU 4200-F-PF3
+              WHEN EIBAID = DFHPF5
+                 PERFORM 9000-I-PF12 THRU 9000-F-PF12
+      *          PERFORM 4300-I-PF5 THRU 4300-F-PF5
+              WHEN EIBAID = DFHPF12
+                 PERFORM 9000-I-PF12 THRU 9000-F-PF12
+              WHEN OTHER
+                 MOVE LOW-VALUES TO MAPKEYO
+                 MOVE 'TECLA INVALIDA' TO KEYERRO
+                 SET SEND-DATAONLY-ALARM TO TRUE
+                 PERFORM 1500-I-SEND-MAP THRU 1500-F-SEND-MAP
+
+           END-EVALUATE.
+
+           PERFORM 9999-I-REINICIO-TRA THRU 9999-F-REINICIO-TRA.
+
+       1500-I-SEND-MAP.
+           PERFORM 5000-I-FECHA THRU 5000-F-FECHA
+           EVALUATE TRUE
+              WHEN SEND-ERASE
+                 EXEC CICS
+                    SEND MAP('MAPKEY')
+                    MAPSET('MAP0450')
+                    FROM (MAPKEYO)
+                    ERASE
+                 END-EXEC
+              WHEN SEND-DATAONLY
+                 EXEC CICS
+                    SEND MAP('MAPKEY')
+                    MAPSET ('MAP0450')
+                    FROM (MAPKEYO)
+                    DATAONLY
+                 END-EXEC
+              WHEN SEND-DATAONLY-ALARM
+                 EXEC CICS
+                    SEND MAP('MAPKEY')
+                    MAPSET ('MAP0450')
+                    FROM (MAPKEYO)
+                    DATAONLY
+                 END-EXEC
+           END-EVALUATE.
+       1500-F-SEND-MAP. EXIT.
+
+       4100-I-PF1.
+           MOVE 'PGMALT50' TO NOMBRE-PROG.
+           PERFORM 4500-I-CALL-PROG THRU 4500-F-CALL-PROG.
+       4100-F-PF1. EXIT.
+
+       4200-I-PF3.
+           MOVE 'PGMBAJ50' TO NOMBRE-PROG.
+           PERFORM 4500-I-CALL-PROG THRU 4500-F-CALL-PROG.
+       4200-F-PF3. EXIT.
+
+       4300-I-PF5.
+           MOVE 'PCSACT50' TO NOMBRE-PROG.
+           PERFORM 4500-I-CALL-PROG THRU 4500-F-CALL-PROG.
+       4300-F-PF5. EXIT.
+
+       4500-I-CALL-PROG.
+           EXEC CICS
+              XCTL PROGRAM(NOMBRE-PROG)
+           END-EXEC.
+       4500-F-CALL-PROG. EXIT.
+
+       5000-I-FECHA.
+           EXEC CICS ASKTIME
+             ABSTIME (WS-ABSTIME)
+           END-EXEC.
+
+           EXEC CICS FORMATTIME
+             ABSTIME (WS-ABSTIME)
+             DDMMYYYY (WS-FECHA) DATESEP(WS-SEP-FECHA)
+           END-EXEC.
+           MOVE WS-FECHA TO FECHAKO.
+       5000-F-FECHA. EXIT.
+
+       9000-I-PF12.
+      *        MOVE 'FIN DE PROGRAMA' TO WS-SALE
+      *        EXEC CICS
+      *             SEND CONTROL ERASE
+      *        END-EXEC
+      *
+      *        EXEC CICS
+      *             SEND TEXT
+      *                  FROM (WS-SALE)
+      *        END-EXEC
+      *
+      *        EXEC CICS
+      *             RETURN
+      *        END-EXEC.
+           EXEC CICS
+              XCTL PROGRAM('PGMMEN50')
+           END-EXEC.
+
+       9000-F-PF12. EXIT.
+
+       9999-I-REINICIO-TRA.
+
+           EXEC CICS
+             RETURN
+             TRANSID  ('S150')
+             COMMAREA (WS-COMMAREA)
+            END-EXEC.
+
+       9999-F-REINICIO-TRA. EXIT.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      *   PBARI

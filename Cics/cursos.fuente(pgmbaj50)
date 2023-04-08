@@ -1,0 +1,551 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. PGMBAJ50.
+
+      *    +-----------------------------------------------------------+
+      *    +    COBOL CICS - BAJA DE RELACION CAJA DE SEGURIDAD        +
+      *    +    PGM      : PGMBAJ50                                    +
+      *    +    MAP      : BAJMAP                                      +
+      *    +    MAPSET   : MAP0450                                     +
+      *    +    TRANS ID : T450                                        +
+      *    +-----------------------------------------------------------+
+
+       DATA DIVISION.
+       FILE SECTION.
+       WORKING-STORAGE SECTION.
+
+       77 WS-START        PIC X(20) VALUE 'WS START'.
+
+       01 WS-ABSTIME           PIC S9(16) COMP VALUE +0.
+       01 WS-FECHA             PIC X(10)       VALUE SPACES.
+       01 WS-SEP-FECHA         PIC X           VALUE '/'.
+       77 WS-LONG              PIC S9(04) COMP.
+       01 WS-RESP              PIC S9(04) COMP.
+       01 WS-SALE              PIC X(30)       VALUE SPACES.
+
+       01 WS-FECHN.
+          05 ANIO              PIC 9(4)        VALUE ZEROS.
+          05 MES               PIC 9(2)        VALUE ZEROS.
+          05 DIA               PIC 9(2)        VALUE ZEROS.
+
+       01 WS-COMMAREA.
+          05  DATA-RELACION.
+             10  COMM-TIPDOC        PIC X(02) VALUE SPACES.
+             10  COMM-NRODOC        PIC 9(11) VALUE ZERO.
+             10  COMM-NOMAPE        PIC X(30) VALUE SPACES.
+             10  COMM-NROCAJ        PIC 9(03) VALUE ZERO.
+             10  COMM-TIPCAJ        PIC X(03) VALUE SPACES.
+             10  COMM-NROCTA        PIC 9(05) VALUE ZERO.
+             10  COMM-AUT-TIPDOC    PIC X(02) VALUE SPACES.
+             10  COMM-AUT-NRODOC    PIC 9(11) VALUE ZERO.
+             10  COMM-BONIF         PIC 9(03) VALUE ZERO.
+             10  COMM-FECHA         PIC 9(08) VALUE ZERO.
+          05  CONTEXTO-KEY          PIC X.
+             88 ALTA                          VALUE 'A'.
+             88 BAJA                          VALUE 'B'.
+             88 MODIFICACION                  VALUE 'M'.
+             88 ERRORES                       VALUE 'E'.
+          05 CONTEXTO-CAJA          PIC 9     VALUE 1.
+          05 PRIMER-MAPA-CAJA       PIC 9     VALUE ZERO.
+          05 LISTADO-CAJAS          OCCURS 351 TIMES.
+             10 LIS-NROCAJ          PIC 9(3)  VALUE ZERO.
+             10 LIS-DISP            PIC X     VALUE SPACES.
+          05 FILLER                 PIC X(10).
+
+       01 WS-DATA-SW           PIC X.
+          88 VALID-DATA        VALUE 'Y'.
+          88 INVALID-DATA      VALUE 'N'.
+
+       01 WS-TIPDOC-VALIDO     PIC X(2).
+          88 TIPDOC-BOOL       VALUE 'DU'
+                                     'PA'
+                                     'PE'.
+
+       01 WS-ERROR-MSG.
+          05 ERR-TIPDOC        PIC X(13)       VALUE '- TIP.DOC.TIT'.
+          05 ERR-NRODOC        PIC X(13)       VALUE '- NRO.DOC.TIT'.
+          05 ERR-NESCLI        PIC X(14)       VALUE '- TIT.N.EXISTE'.
+          05 ERR-NROCAJ        PIC X(9)        VALUE '- NRO.CAJ'.
+          05 ERR-DISPCAJ       PIC X(9)        VALUE '- CAJ.OCU'.
+          05 ERR-NROCTA        PIC X(9)        VALUE '- NRO.CTA'.
+          05 ERR-AUT-TIPDOC    PIC X(13)       VALUE '- TIP.DOC.AUT'.
+          05 ERR-AUT-NRODOC    PIC X(13)       VALUE '- NRO.DOC.AUT'.
+          05 ERR-NOESCLIA      PIC X(14)       VALUE '- AUT.N.EXISTE'.
+          05 ERR-BONIF         PIC X(7)        VALUE '- BONIF'.
+          05 ERR-RELAC         PIC X(10)       VALUE '- REL.EXIS'.
+          05 ERR-SP            PIC X(3)        VALUE ' '.
+
+       01 WS-ERROR-GRAL        PIC X(84)       VALUE SPACES.
+
+       01 SEND-FLAG            PIC X.
+          88 SEND-ERASE                 VALUE '1'.
+          88 SEND-DATAONLY              VALUE '2'.
+
+       01 WS-FILE-KEY.
+          05 TIPDOC       PIC X(02).
+          05 NRODOC       PIC 9(11).
+
+       01 WS-CAJA-KEY.
+          05 NRO-CAJ      PIC 9(3).
+
+       01 WS-REL-KEY.
+          05  REL-TIP-DOC         PIC X(02).
+          05  REL-NRO-DOC         PIC 9(11).
+          05  REL-NRO-CAJA        PIC 9(03).
+
+       03 WS-BAJ-KEY.
+          05  BAJ-TIP-DOC         PIC X(02).
+          05  BAJ-NRO-DOC         PIC 9(11).
+          05  BAJ-NRO-CAJA        PIC 9(03).
+          05  BAJ-FECHA-BAJA      PIC 9(08).
+
+
+       COPY MAP0450.
+       COPY DFHAID.
+       COPY CPPERSON.
+       COPY CSCAJA.
+       COPY CSRELAC.
+       COPY CSBAJREL.
+       COPY ATTR2.
+
+       LINKAGE SECTION.
+
+       01 DFHCOMMAREA               PIC X(1495).
+
+       PROCEDURE DIVISION.
+       MAIN-PROGRAM.
+      *-------------*
+           INITIALIZE WS-COMMAREA
+           MOVE DFHCOMMAREA TO WS-COMMAREA
+
+           EVALUATE TRUE
+
+              WHEN EIBCALEN = ZEROS
+                 MOVE LOW-VALUES TO MAPBAJO
+                 MOVE 'INGRESE DATOS Y PRESIONE ENTER' TO BAJERRO
+                 SET SEND-ERASE TO TRUE
+                 PERFORM 1500-I-SEND-MAP THRU 1500-F-SEND-MAP
+
+              WHEN EIBAID = DFHPF3
+                 PERFORM 9000-I-PF12 THRU 9000-F-PF12
+
+              WHEN EIBAID = DFHENTER
+                 PERFORM 1000-I-BUSCAR-RELAC THRU
+                         1000-F-BUSCAR-RELAC
+
+              WHEN EIBAID = DFHPF4
+                 PERFORM 1600-I-BORRAR-RELACION THRU
+                         1600-F-BORRAR-RELACION
+                 SET SEND-ERASE TO TRUE
+                 PERFORM 1500-I-SEND-MAP THRU 1500-F-SEND-MAP
+
+              WHEN OTHER
+                 MOVE LOW-VALUES TO MAPBAJO
+                 MOVE 'TECLA INVALIDA' TO BAJERRO
+                 SET SEND-DATAONLY TO TRUE
+                 PERFORM 1500-I-SEND-MAP THRU 1500-F-SEND-MAP
+
+           END-EVALUATE.
+
+           PERFORM 9999-I-REINICIO-TRA THRU 9999-F-REINICIO-TRA.
+
+      *MAIN-PROGRAM-FIN
+      *-----------------*
+
+       1000-I-BUSCAR-RELAC.
+
+           PERFORM 1100-I-RECEIVE-MAP        THRU
+                   1100-F-RECEIVE-MAP.
+
+           PERFORM 1200-I-VAL-TIPNRODOC-T    THRU
+                   1200-F-VAL-TIPNRODOC-T.
+
+           PERFORM 1220-I-VAL-CAJA           THRU
+                   1220-F-VAL-CAJA.
+
+           PERFORM 1240-I-VAL-RELACION       THRU
+                   1240-F-VAL-RELACION.
+
+           MOVE LOW-VALUES TO MAPBAJO.
+           IF VALID-DATA
+              MOVE 'PULSE PF4 PARA CONFIRMAR BAJA ' TO BAJERRO
+           ELSE
+              MOVE WS-ERROR-GRAL TO BAJERRO
+           END-IF
+
+           PERFORM MOVER-COMMAREA-A-MAPA THRU
+                   MOVER-COMMAREA-A-MAPA-F.
+           SET SEND-ERASE TO TRUE.
+           MOVE 'Y'  TO WS-DATA-SW.
+           PERFORM 1500-I-SEND-MAP THRU 1500-F-SEND-MAP.
+
+       1000-F-BUSCAR-RELAC. EXIT.
+
+       1100-I-RECEIVE-MAP.
+
+           EXEC CICS
+              RECEIVE MAP('MAPBAJ')
+                      MAPSET('MAP0450')
+                      INTO(MAPBAJI)
+           END-EXEC.
+
+           PERFORM MOVER-MAPA-A-COMMAREA THRU
+                   MOVER-MAPA-A-COMMAREA-F.
+
+       1100-F-RECEIVE-MAP. EXIT.
+
+       MOVER-COMMAREA-A-MAPA.
+
+           MOVE COMM-TIPDOC     TO BAJTDO.
+           MOVE COMM-NRODOC     TO BAJNDO.
+           MOVE COMM-NROCAJ     TO BAJNCO.
+
+       MOVER-COMMAREA-A-MAPA-F. EXIT.
+
+       MOVER-MAPA-A-COMMAREA.
+
+           MOVE BAJTDI          TO COMM-TIPDOC.
+           MOVE BAJNDI          TO COMM-NRODOC.
+           MOVE BAJNCI          TO COMM-NROCAJ.
+
+       MOVER-MAPA-A-COMMAREA-F. EXIT.
+
+      *   +------------------------------------------------------------+
+      *   +   COMIENZO VALIDACIONES                                    +
+      *   +------------------------------------------------------------+
+
+       1200-I-VAL-TIPNRODOC-T.
+
+           MOVE BAJTDI TO WS-TIPDOC-VALIDO
+           IF NOT TIPDOC-BOOL
+              MOVE 'N'         TO WS-DATA-SW
+              MOVE ATTR-RED    TO BAJTDC
+              STRING WS-ERROR-GRAL DELIMITED BY ERR-SP
+                     ERR-TIPDOC    DELIMITED BY ERR-SP
+                                   INTO WS-ERROR-GRAL
+           ELSE
+              MOVE ATTR-GREEN      TO BAJTDC
+              MOVE ATTR-PROT-SKIP  TO BAJTDA
+           END-IF.
+
+           IF BAJNDI <= ZERO OR BAJNDI IS NOT NUMERIC
+              MOVE 'N'         TO WS-DATA-SW
+              MOVE ATTR-RED    TO BAJNDC
+              STRING WS-ERROR-GRAL DELIMITED BY ERR-SP
+                     ERR-NRODOC    DELIMITED BY ERR-SP
+                                   INTO WS-ERROR-GRAL
+           ELSE
+              MOVE ATTR-GREEN      TO BAJNDC
+              MOVE ATTR-PROT-SKIP  TO BAJNDA
+           END-IF.
+
+       1200-F-VAL-TIPNRODOC-T. EXIT.
+
+       1220-I-VAL-CAJA.
+
+           IF BAJNCI < 1 OR BAJNCI > 351
+              MOVE 'N'          TO WS-DATA-SW
+              MOVE ATTR-RED     TO BAJNCC
+              STRING WS-ERROR-GRAL DELIMITED BY ERR-SP
+                     ERR-NROCAJ    DELIMITED BY ERR-SP
+                                   INTO WS-ERROR-GRAL
+           ELSE
+              MOVE ATTR-GREEN      TO BAJNCC
+              MOVE ATTR-PROT-SKIP  TO BAJNCA
+           END-IF.
+
+       1220-F-VAL-CAJA. EXIT.
+
+       1240-I-VAL-RELACION.
+
+           IF VALID-DATA
+              MOVE BAJTDI     TO REL-TIP-DOC
+              MOVE BAJNDI     TO REL-NRO-DOC
+              MOVE BAJNCI     TO REL-NRO-CAJA
+
+                 EXEC CICS
+                    READ FILE ('RELACCS')
+                    INTO (CR-RELA)
+                    RIDFLD (WS-REL-KEY)
+                    RESP (WS-RESP)
+                 END-EXEC
+                 EVALUATE WS-RESP
+                    WHEN DFHRESP(NORMAL)
+                       CONTINUE
+                    WHEN DFHRESP(NOTFND)
+                       MOVE 'N' TO WS-DATA-SW
+                       MOVE 'NO EXISTE LA RELACION ' TO WS-ERROR-GRAL
+                    WHEN OTHER
+                       EXEC CICS
+                          ABEND
+                       END-EXEC
+                 END-EVALUATE
+           .
+
+       1240-F-VAL-RELACION. EXIT.
+
+       1500-I-SEND-MAP.
+           PERFORM 5000-I-FECHA THRU 5000-F-FECHA
+           EVALUATE TRUE
+              WHEN SEND-ERASE
+                 EXEC CICS
+                    SEND MAP('MAPBAJ')
+                    MAPSET('MAP0450')
+                    FROM (MAPBAJO)
+                    ERASE
+                 END-EXEC
+              WHEN SEND-DATAONLY
+                 EXEC CICS
+                    SEND MAP('MAPBAJ')
+                    MAPSET ('MAP0450')
+                    FROM (MAPBAJO)
+                    DATAONLY
+                 END-EXEC
+           END-EVALUATE.
+       1500-F-SEND-MAP. EXIT.
+
+       1600-I-BORRAR-RELACION.
+
+           IF VALID-DATA
+              MOVE COMM-TIPDOC TO REL-TIP-DOC
+              MOVE COMM-NRODOC TO REL-NRO-DOC
+              MOVE COMM-NROCAJ TO REL-NRO-CAJA
+
+                 EXEC CICS
+                    READ FILE ('RELACCS')
+                    INTO (CR-RELA)
+                    RIDFLD (WS-REL-KEY)
+                    UPDATE
+                    RESP (WS-RESP)
+                 END-EXEC
+                 EVALUATE WS-RESP
+                    WHEN DFHRESP(NORMAL)
+                       EXEC CICS
+                          DELETE FILE ('RELACCS')
+                          RESP(WS-RESP)
+                       END-EXEC
+                       EVALUATE WS-RESP
+                       WHEN DFHRESP(NORMAL)
+                          MOVE 'BORRADO DE RELAC. OK ' TO BAJERRO
+                          PERFORM 1650-I-LIBERAR-CAJA THRU
+                                  1650-F-LIBERAR-CAJA
+                          WHEN OTHER
+                             EXEC CICS
+                                ABEND
+                             END-EXEC
+                       END-EVALUATE
+                    WHEN DFHRESP(NOTFND)
+                       MOVE 'NO EXISTE LA RELACION ' TO BAJERRO
+                    WHEN OTHER
+                       EXEC CICS
+                          ABEND
+                       END-EXEC
+                 END-EVALUATE
+           .
+
+       1600-F-BORRAR-RELACION. EXIT.
+
+       1650-I-LIBERAR-CAJA.
+
+           MOVE COMM-NROCAJ TO NRO-CAJ
+           EXEC CICS
+              READ FILE ('MAECAJA')
+              INTO (CS-CAJA)
+              RIDFLD (WS-CAJA-KEY)
+              UPDATE
+              RESP (WS-RESP)
+           END-EXEC
+
+           EVALUATE WS-RESP
+              WHEN DFHRESP(NORMAL)
+                 MOVE 'L' TO CS-MARCA-ACTIVA
+              WHEN OTHER
+                 EXEC CICS
+                    ABEND
+                 END-EXEC
+           END-EVALUATE
+
+           EXEC CICS
+             REWRITE FILE('MAECAJA')
+             FROM(CS-CAJA)
+             RESP (WS-RESP)
+           END-EXEC
+
+           EVALUATE WS-RESP
+              WHEN DFHRESP(NORMAL)
+                 PERFORM 1700-I-GRABAR-BAJA THRU
+                         1700-F-GRABAR-BAJA
+
+              WHEN OTHER
+                 EXEC CICS
+                    ABEND
+                 END-EXEC
+           END-EVALUATE.
+
+       1650-F-LIBERAR-CAJA. EXIT.
+
+       1700-I-GRABAR-BAJA.
+
+           INITIALIZE CB-RELA.
+           MOVE CR-TIP-DOC            TO CB-TIP-DOC
+                                         BAJ-TIP-DOC.
+
+           MOVE CR-NRO-DOC            TO CB-NRO-DOC
+                                         BAJ-NRO-DOC.
+
+           MOVE CR-NRO-CAJA           TO CB-NRO-CAJA
+                                         BAJ-NRO-CAJA.
+
+           MOVE FUNCTION CURRENT-DATE TO WS-FECHN.
+           MOVE WS-FECHN              TO CB-FECHA-BAJA
+                                         BAJ-FECHA-BAJA.
+
+           MOVE CR-NRO-CUENTA         TO CB-NRO-CTA.
+           MOVE CR-AUT-TDOC           TO CB-AUT-TDOC.
+           MOVE CR-AUT-NDOC           TO CB-AUT-NDOC.
+           MOVE CR-PORC-BONIF-COMI    TO CB-PORC-BONIF-COMI.
+           MOVE CR-FECHA-ALTA         TO CB-FECHA-ALTA.
+
+           EXEC CICS
+              WRITE FILE('BAJRELA')
+              FROM(CB-RELA)
+              RIDFLD(WS-BAJ-KEY)
+              RESP (WS-RESP)
+           END-EXEC.
+
+           EVALUATE WS-RESP
+              WHEN DFHRESP(NORMAL)
+                 CONTINUE
+              WHEN DFHRESP(DUPREC)
+                 MOVE 'BAJA NO REGISTRADA - CLAVE DUPLICADA' TO BAJERRO
+              WHEN OTHER
+                 EXEC CICS
+                    ABEND
+                 END-EXEC
+           END-EVALUATE.
+
+       1700-F-GRABAR-BAJA. EXIT.
+
+       5000-I-FECHA.
+           EXEC CICS ASKTIME
+             ABSTIME (WS-ABSTIME)
+           END-EXEC.
+
+           EXEC CICS FORMATTIME
+             ABSTIME (WS-ABSTIME)
+             DDMMYYYY (WS-FECHA) DATESEP(WS-SEP-FECHA)
+           END-EXEC.
+           MOVE WS-FECHA TO FECHABO.
+
+       5000-F-FECHA. EXIT.
+
+       9000-I-PF12.
+
+           EXEC CICS
+              XCTL PROGRAM('PCSAXT50')
+           END-EXEC.
+
+       9000-F-PF12. EXIT.
+
+       9999-I-REINICIO-TRA.
+
+           EXEC CICS
+             RETURN
+             TRANSID  ('T450')
+             COMMAREA (WS-COMMAREA)
+            END-EXEC.
+
+       9999-F-REINICIO-TRA. EXIT.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      *   PBARI

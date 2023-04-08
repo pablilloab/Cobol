@@ -1,0 +1,232 @@
+       IDENTIFICATION DIVISION.                                         00010000
+        PROGRAM-ID TBSORT3.                                             00011038
+                                                                        00011139
+      *----------------------------------------------------------------*00012027
+      *                                                                *00013027
+      *  RUTINA DE ORDENAMIENTO                                        *00014043
+      *  PARAMETROS DE ENTRADA: CAMPO DE ORDENAMIENTO                  *00015029
+      *                         ORDEN (ASC O DESC)                     *00015129
+      *                         TAMAÑO DEL VECTOR                      *00015229
+      *                         PUNTERO DE MEMORIA DEL VECTOR          *00015329
+      *                         (PARA TABLA DE 5 CAMPOS)               *00015440
+      *----------------------------------------------------------------*00015527
+                                                                        00015627
+       ENVIRONMENT DIVISION.                                            00020000
+       INPUT-OUTPUT SECTION.                                            00021000
+       FILE-CONTROL.                                                    00021100
+       DATA DIVISION.                                                   00030000
+       FILE SECTION.                                                    00031000
+                                                                        00039100
+       WORKING-STORAGE SECTION.                                         00040000
+      *----------------------------------------------------------------*00040127
+       77  FILLER        PIC X(26) VALUE '* INICIO WORKING-STORAGE *'.  00041000
+                                                                        00041100
+      *MENSAJES                                                         00041229
+       01 WS-MSJ         PIC X(40) VALUE 'ORDENAMIENTO OK!'.            00052529
+                                                                        00052629
+      *FLAG ORDENADO                                                    00052729
+       01 ORDENADO       PIC X     VALUE 'N'.                           00052829
+                                                                        00052929
+      *VARIABLES PARA GUARDAR COMPARADORES LUEGO DE SELECCIONAR EL CAMPO00053038
+       01 COMPARA        PIC X(30) VALUE SPACES.                        00056238
+       01 COMPARA-SIG    PIC X(30) VALUE SPACES.                        00056338
+                                                                        00056538
+      *VARIABLES TEMPORALES PARA REALIZAR EL SWAP DE ELEMENTOS          00056638
+       01 TMP-NOMAPE     PIC X(30) VALUE SPACES.                        00056738
+       01 TMP-TIPDOC     PIC X(2)  VALUE SPACES.                        00056838
+       01 TMP-NRODOC     PIC 9(11) VALUE ZERO.                          00056938
+       01 TMP-NROCAJ     PIC 9(3)  VALUE ZERO.                          00057038
+       01 TMP-TIPCAJ     PIC X(3)  VALUE SPACES.                        00057138
+                                                                        00057238
+       77  FILLER        PIC X(26) VALUE '* FINAL  WORKING-STORAGE *'.  00057438
+                                                                        00057538
+      *----------------------------------------------------------------*00057638
+       LINKAGE SECTION.                                                 00057738
+                                                                        00057838
+       01 LK-AREA.                                                      00057938
+          05 LK-CAMPO            PIC 9(2).                              00058038
+          05 LK-ORDEN            PIC X(3).                              00058138
+          05 LK-TAMANO           PIC 9(3).                              00058238
+          05 LK-POINTER          USAGE IS POINTER.                      00058338
+          05 LK-ATTR             PIC 9.                                 00058442
+                                                                        00058538
+                                                                        00058638
+      *TABLA PARA RECIBIR LOS DATOS A ORDENAR                           00058738
+      *SE DEBE COPIAR IDENTICA A LA QUE SE TIENE EL PROG LLAMADOR       00059041
+                                                                        00059135
+       01 LK-TABLA.                                                     00059235
+          05 LK-AUT           OCCURS 1 TO 351 TIMES                     00059335
+                              DEPENDING ON LK-TAMANO                    00059435
+                              INDEXED BY AUT-INDEX.                     00059535
+                                                                        00059635
+             10 LK-AUT-NOMAPE PIC X(30).                                00059735
+             10 LK-AUT-TIPDOC PIC X(2).                                 00059835
+             10 LK-AUT-NRODOC PIC 9(11).                                00059935
+             10 LK-AUT-NROCAJ PIC 9(3).                                 00060035
+             10 LK-AUT-TIPCAJ PIC X(3).                                 00060135
+                                                                        00060235
+       PROCEDURE DIVISION USING LK-AREA.                                00060330
+                                                                        00060437
+      *----------------------------------------------------------------*00060530
+      *                                                                *00060630
+      *  CUERPO PRINCIPAL DEL PROGRAMA                                 *00060730
+      *                                                                *00060830
+      *----------------------------------------------------------------*00060930
+       MAIN-PROGRAM.                                                    00061030
+                                                                        00061630
+           PERFORM 1000-INICIO  THRU   F-1000-INICIO.                   00061730
+                                                                        00061830
+           PERFORM 2000-PROCESO  THRU  F-2000-PROCESO.                  00062035
+                                                                        00062230
+           PERFORM 9999-FINAL    THRU  F-9999-FINAL.                    00062330
+                                                                        00062430
+       F-MAIN-PROGRAM. GOBACK.                                          00062530
+                                                                        00062630
+       1000-INICIO.                                                     00062700
+                                                                        00062839
+      *MUEVO PUNTERO DE MEMORIA A LA TABLA DE LA RUTINA PARA ORDENAR    00063038
+           SET ADDRESS OF LK-TABLA TO LK-POINTER.                       00064035
+                                                                        00065035
+       F-1000-INICIO. EXIT.                                             00086029
+                                                                        00086218
+       2000-PROCESO.                                                    00090000
+           DISPLAY '2000-PROCESO'                                       00090135
+           EVALUATE LK-ORDEN                                            00090229
+              WHEN 'ASC'                                                00090329
+                 PERFORM UNTIL ORDENADO = 'Y'                           00090429
+                    MOVE 'Y' TO ORDENADO                                00090529
+                    PERFORM VARYING AUT-INDEX FROM 1 BY 1               00091238
+                                      UNTIL AUT-INDEX = (LK-TAMANO - 1) 00091338
+                                                                        00091429
+                       PERFORM 2010-I-BUSCAR-CAMPO THRU                 00091538
+                               2010-F-BUSCAR-CAMPO                      00091638
+                                                                        00091738
+                       IF COMPARA > COMPARA-SIG                         00093038
+                                                                        00093138
+                                                                        00093238
+                          DISPLAY 'DENTRO DEL IF'                       00093338
+                                                                        00093838
+                          MOVE 'N' TO ORDENADO                          00093938
+                                                                        00094038
+                          PERFORM 2100-I-GUARDAR-AUX THRU               00094138
+                                  2100-F-GUARDAR-AUX                    00094238
+                                                                        00094338
+                          PERFORM 2200-I-SWAP THRU                      00094438
+                                  2200-F-SWAP                           00094538
+                                                                        00094638
+                          PERFORM 2300-I-CARGAR-AUX THRU                00094738
+                                  2300-F-CARGAR-AUX                     00094838
+                       END-IF                                           00095029
+                                                                        00095129
+                    END-PERFORM                                         00095230
+                 END-PERFORM                                            00095330
+                                                                        00095429
+              WHEN 'DES'                                                00095529
+                 PERFORM UNTIL ORDENADO = 'Y'                           00095738
+                    MOVE 'Y' TO ORDENADO                                00095838
+                    PERFORM VARYING AUT-INDEX FROM 1 BY 1               00095938
+                                      UNTIL AUT-INDEX = (LK-TAMANO - 1) 00096038
+                                                                        00096138
+                       PERFORM 2010-I-BUSCAR-CAMPO THRU                 00096238
+                               2010-F-BUSCAR-CAMPO                      00096338
+                                                                        00096438
+                       IF COMPARA < COMPARA-SIG                         00096538
+                                                                        00096638
+                                                                        00096738
+                          DISPLAY 'DENTRO DEL IF'                       00096838
+                                                                        00096938
+                          MOVE 'N' TO ORDENADO                          00097038
+                                                                        00097138
+                          PERFORM 2100-I-GUARDAR-AUX THRU               00097238
+                                  2100-F-GUARDAR-AUX                    00097338
+                                                                        00097438
+                          PERFORM 2200-I-SWAP THRU                      00097538
+                                  2200-F-SWAP                           00097638
+                                                                        00097738
+                          PERFORM 2300-I-CARGAR-AUX THRU                00097838
+                                  2300-F-CARGAR-AUX                     00097938
+                       END-IF                                           00098038
+                                                                        00098138
+                    END-PERFORM                                         00098238
+                 END-PERFORM                                            00098338
+                                                                        00098438
+              WHEN OTHER                                                00098529
+                 MOVE 'METODO DE ORD ERRONEO' TO WS-MSJ                 00098629
+           END-EVALUATE.                                                00099029
+                                                                        00102035
+       F-2000-PROCESO. EXIT.                                            00102135
+                                                                        00102229
+      *MUEVO A COMPARADORES LA VARIABLE ENVIADA EN LK-CAMPO             00102338
+      *PARA ORDENAR POR EL CAMPO DESEADO                                00102438
+       2010-I-BUSCAR-CAMPO.                                             00102538
+                                                                        00102638
+           EVALUATE LK-CAMPO                                            00102738
+           WHEN 1                                                       00102838
+              MOVE LK-AUT-NOMAPE(AUT-INDEX)     TO COMPARA              00102938
+              MOVE LK-AUT-NOMAPE(AUT-INDEX + 1) TO COMPARA-SIG          00103038
+           WHEN 2                                                       00103138
+              MOVE LK-AUT-TIPDOC(AUT-INDEX)     TO COMPARA              00103238
+              MOVE LK-AUT-TIPDOC(AUT-INDEX + 1) TO COMPARA-SIG          00103338
+           WHEN 3                                                       00103438
+              MOVE LK-AUT-NRODOC(AUT-INDEX)     TO COMPARA              00103538
+              MOVE LK-AUT-NRODOC(AUT-INDEX + 1) TO COMPARA-SIG          00103638
+           WHEN 4                                                       00103738
+              MOVE LK-AUT-NROCAJ(AUT-INDEX)     TO COMPARA              00103838
+              MOVE LK-AUT-NROCAJ(AUT-INDEX + 1) TO COMPARA-SIG          00103938
+           WHEN 5                                                       00104038
+              MOVE LK-AUT-TIPCAJ(AUT-INDEX)     TO COMPARA              00104138
+              MOVE LK-AUT-TIPCAJ(AUT-INDEX + 1) TO COMPARA-SIG          00104238
+           END-EVALUATE.                                                00104338
+                                                                        00104438
+       2010-F-BUSCAR-CAMPO. EXIT.                                       00104538
+                                                                        00104638
+      *GUARDO EN AUX PARA PERSISTIR EL DATO DEL SWAP                    00104738
+       2100-I-GUARDAR-AUX.                                              00104829
+                                                                        00104935
+           MOVE LK-AUT-NOMAPE(AUT-INDEX) TO TMP-NOMAPE.                 00105338
+           MOVE LK-AUT-TIPDOC(AUT-INDEX) TO TMP-TIPDOC.                 00105438
+           MOVE LK-AUT-NRODOC(AUT-INDEX) TO TMP-NRODOC.                 00105538
+           MOVE LK-AUT-NROCAJ(AUT-INDEX) TO TMP-NROCAJ.                 00105638
+           MOVE LK-AUT-TIPCAJ(AUT-INDEX) TO TMP-TIPCAJ.                 00105738
+                                                                        00106038
+       2100-F-GUARDAR-AUX. EXIT.                                        00106138
+                                                                        00106238
+      *SWAP DE VALORES                                                  00106338
+       2200-I-SWAP.                                                     00106438
+                                                                        00106538
+           MOVE LK-AUT-NOMAPE(AUT-INDEX + 1) TO                         00106838
+                                    LK-AUT-NOMAPE(AUT-INDEX).           00106938
+           MOVE LK-AUT-TIPDOC(AUT-INDEX + 1) TO                         00107038
+                                    LK-AUT-TIPDOC(AUT-INDEX).           00107138
+           MOVE LK-AUT-NRODOC(AUT-INDEX + 1) TO                         00107238
+                                    LK-AUT-NRODOC(AUT-INDEX).           00107338
+           MOVE LK-AUT-NROCAJ(AUT-INDEX + 1) TO                         00107438
+                                    LK-AUT-NROCAJ(AUT-INDEX).           00107538
+           MOVE LK-AUT-TIPCAJ(AUT-INDEX + 1) TO                         00107638
+                                    LK-AUT-TIPCAJ(AUT-INDEX).           00107738
+                                                                        00108038
+       2200-F-SWAP. EXIT.                                               00108138
+                                                                        00108238
+      *VUELVO AL VECTOR EL VALOR DE TMP                                 00108338
+       2300-I-CARGAR-AUX.                                               00108438
+                                                                        00108838
+           MOVE TMP-NOMAPE TO LK-AUT-NOMAPE(AUT-INDEX + 1).             00108938
+           MOVE TMP-TIPDOC TO LK-AUT-TIPDOC(AUT-INDEX + 1).             00109038
+           MOVE TMP-NRODOC TO LK-AUT-NRODOC(AUT-INDEX + 1).             00109138
+           MOVE TMP-NROCAJ TO LK-AUT-NROCAJ(AUT-INDEX + 1).             00109238
+           MOVE TMP-TIPCAJ TO LK-AUT-TIPCAJ(AUT-INDEX + 1).             00109338
+                                                                        00109438
+       2300-F-CARGAR-AUX. EXIT.                                         00109838
+                                                                        00109938
+      *----------------------------------------------------------------*00165027
+      *                                                                *00166027
+      *  CUERPO FINAL MUESTRA RESULTADO                                *00167027
+      *                                                                *00168027
+      *----------------------------------------------------------------*00169027
+       9999-FINAL.                                                      00170000
+                                                                        00173007
+           DISPLAY WS-MSJ.                                              00174029
+                                                                        00181000
+       F-9999-FINAL.  EXIT.                                             00190000
+                                                                        00191000
+      *                                                                 00200000
