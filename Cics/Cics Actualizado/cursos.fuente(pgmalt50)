@@ -399,7 +399,7 @@
                     ELSE
                        MOVE ATTR-GREEN  TO ALTNCA
                        MOVE ALTNCI      TO COMM-NROCAJ
-                       MOVE CS-TIP-CAJA TO COMM-TIPCAJ
+      *                MOVE CS-TIP-CAJA TO COMM-TIPCAJ
                     END-IF
                  WHEN OTHER
                     EXEC CICS
@@ -566,12 +566,12 @@
 
       *    INI + MOVE PARA REGISTRO DE RELACION
            INITIALIZE CR-RELA.
-           MOVE SPACES TO CR-RELA(49:32).
+           MOVE SPACES TO CR-RELA(46:32).
 
            MOVE COMM-TIPDOC     TO CR-TIP-DOC
            MOVE COMM-NRODOC     TO CR-NRO-DOC
            MOVE COMM-NROCAJ     TO CR-NRO-CAJA
-           MOVE COMM-TIPCAJ     TO CR-TIPO
+      *    MOVE COMM-TIPCAJ     TO CR-TIPO
            MOVE COMM-NROCTA     TO CR-NRO-CUENTA
            MOVE COMM-AUT-TIPDOC TO CR-AUT-TDOC
            MOVE COMM-AUT-NRODOC TO CR-AUT-NDOC
